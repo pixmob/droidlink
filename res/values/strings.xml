@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Droid Link</string>
+    <string name="account_selection">Account selection</string>
+    <string name="select_account">Select an account for connecting your phone:</string>
+    <string name="ok">OK</string>
+    <string name="error">Sorry!</string>
+    <string name="no_account_available">No Google account available!</string>
+    <string name="no_events">No events.</string>
+    <string name="settings">Settings</string>
+    <string name="unknown_number">Unknown</string>
+</resources>
