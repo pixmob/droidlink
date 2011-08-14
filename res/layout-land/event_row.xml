@@ -26,5 +26,5 @@
         android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceSmall"></TextView>
     <ImageView android:id="@+id/event_call_back" android:layout_width="wrap_content"
         android:layout_height="wrap_content" android:background="@android:color/transparent"
-        android:src="@drawable/call_contact" android:padding="8dip"></ImageView>
+        android:padding="8dip" android:src="@drawable/badge_action_call"></ImageView>
 </LinearLayout>
