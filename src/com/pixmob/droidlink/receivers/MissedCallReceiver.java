@@ -34,7 +34,7 @@ import com.pixmob.droidlink.services.MissedCallHandlerService;
  * server at a later time.
  * @author Pixmob
  */
-public class CallReceiver extends BroadcastReceiver {
+public class MissedCallReceiver extends BroadcastReceiver {
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
     
