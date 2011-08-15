@@ -57,8 +57,7 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         EVENT_ICONS.put(Constants.MISSED_CALL_EVENT, R.drawable.ic_missed_call);
         EVENT_ICONS.put(Constants.SMS_EVENT_TYPE, R.drawable.ic_sms_mms);
     }
-    
-    private final boolean deviceCanCall;
+    private static Boolean deviceCanCall;
     private final boolean showMessage;
     
     public EventCursorAdapter(Context context, Cursor c) {
@@ -66,11 +65,13 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
                 KEY_DATE, KEY_MESSAGE }, new int[] { R.id.event_name, R.id.event_number,
                 R.id.event_date, R.id.event_message });
         
-        // The icon for calling back a contact is hidden if the current device
-        // is actually not a phone.
-        final TelephonyManager tm = (TelephonyManager) context
-                .getSystemService(Context.TELEPHONY_SERVICE);
-        deviceCanCall = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
+        if (deviceCanCall == null) {
+            // The icon for calling back a contact is hidden if the current
+            // device is actually not a phone.
+            final TelephonyManager tm = (TelephonyManager) context
+                    .getSystemService(Context.TELEPHONY_SERVICE);
+            deviceCanCall = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
+        }
         
         showMessage = context.getResources().getBoolean(R.bool.show_event_message);
     }
