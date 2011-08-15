@@ -21,6 +21,15 @@ package com.pixmob.droidlink;
  */
 public final class Constants {
     /**
+     * Server host.
+     */
+    public static final String SERVER_HOST = "mydroidlink.appspot.com";
+    /**
+     * HTTP User Agent.
+     */
+    public static final String USER_AGENT = "Droid Link";
+    
+    /**
      * Event type for a missed call.
      */
     public static final int MISSED_CALL_EVENT = 1;

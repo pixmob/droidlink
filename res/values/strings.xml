@@ -9,4 +9,7 @@
     <string name="no_events">No events.</string>
     <string name="settings">Settings</string>
     <string name="unknown_number">Unknown</string>
+    <string name="auth_error">Failed to authenticate.</string>
+    <string name="auth_pending">Authenticating...</string>
+    <string name="please_wait">Please wait</string>
 </resources>

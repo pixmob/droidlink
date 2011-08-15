@@ -15,7 +15,9 @@
  */
 package com.pixmob.droidlink.ui;
 
+import static com.pixmob.droidlink.Constants.SERVER_HOST;
 import static com.pixmob.droidlink.Constants.TAG;
+import static com.pixmob.droidlink.Constants.USER_AGENT;
 
 import java.io.IOException;
 
@@ -26,7 +28,9 @@ import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -51,10 +55,15 @@ import com.pixmob.droidlink.util.Accounts;
  * @author Pixmob
  */
 public class SelectAccountActivity extends ListActivity {
+    private static final int GRANT_AUTH_PERMISSION_REQUEST = 1;
     private static final int NO_ACCOUNT_AVAILABLE_DIALOG = 2;
+    private static final int AUTH_PROGRESS_DIALOG = 3;
+    private static final int AUTH_ERROR_DIALOG = 4;
     private String accountName;
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
+    private CheckAccountTask checkAccountTask;
+    private State state;
     
     public void onSelectAccount(View v) {
         prefsEditor.putString(Constants.SP_KEY_ACCOUNT, accountName);
@@ -63,21 +72,39 @@ public class SelectAccountActivity extends ListActivity {
         } else {
             prefsEditor.commit();
         }
-        setResult(RESULT_OK);
-        finish();
+        checkAccount();
     }
     
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE_DIALOG == id) {
-            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        setResult(RESULT_CANCELED);
-                        finish();
+            return new AlertDialog.Builder(this)
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            setResult(RESULT_CANCELED);
+                            finish();
+                        }
+                    }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
+        }
+        if (AUTH_ERROR_DIALOG == id) {
+            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null)
+                    .setTitle(R.string.error).setMessage(R.string.auth_error).create();
+        }
+        if (AUTH_PROGRESS_DIALOG == id) {
+            final ProgressDialog d = new ProgressDialog(this);
+            d.setTitle(R.string.please_wait);
+            d.setMessage(getString(R.string.auth_pending));
+            d.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(DialogInterface dialog) {
+                    if (checkAccountTask != null) {
+                        checkAccountTask.cancel(true);
+                        checkAccountTask = null;
                     }
-                }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
+                }
+            });
+            return d;
         }
         return super.onCreateDialog(id);
     }
@@ -93,6 +120,17 @@ public class SelectAccountActivity extends ListActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
         setContentView(R.layout.select_account);
+        
+        state = (State) getLastNonConfigurationInstance();
+        if (state == null) {
+            state = new State();
+            state.activity = this;
+        }
+    }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        return state;
     }
     
     @Override
@@ -148,6 +186,22 @@ public class SelectAccountActivity extends ListActivity {
         findViewById(R.id.ok_button).setEnabled(true);
     }
     
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (GRANT_AUTH_PERMISSION_REQUEST == requestCode) {
+            if (RESULT_OK == resultCode) {
+                checkAccount();
+            } else {
+                accountName = null;
+            }
+        }
+    }
+    
+    private void checkAccount() {
+        state.checkAccountTask = new CheckAccountTask(state);
+        state.checkAccountTask.execute(accountName);
+    }
+    
     private class AccountAdapter extends ArrayAdapter<Account> {
         public AccountAdapter(Account[] objects) {
             super(SelectAccountActivity.this, R.layout.account_row, R.id.account_name, objects);
@@ -168,43 +222,96 @@ public class SelectAccountActivity extends ListActivity {
         }
     }
     
-    private static class CheckAccountTask extends AsyncTask<String, Void, Boolean> {
-        private SelectAccountActivity activity;
+    private static class State {
+        public SelectAccountActivity activity;
+        public CheckAccountTask checkAccountTask;
+    }
+    
+    /**
+     * Internal task for checking a Google account. A new dialog may be opened,
+     * asking the user for granting its permission to use its account.
+     * @author Pixmob
+     */
+    private static class CheckAccountTask extends AsyncTask<String, Void, Integer> {
+        private static final int AUTH_OK = 0;
+        private static final int AUTH_FAIL = 1;
+        private static final int AUTH_PENDING = 2;
+        private final State state;
+        private Intent authPendingIntent;
         
-        public void attach(SelectAccountActivity activity) {
-            this.activity = activity;
+        public CheckAccountTask(final State state) {
+            this.state = state;
         }
         
         @Override
-        protected Boolean doInBackground(String... params) {
-            final SelectAccountActivity a = activity;
+        protected Integer doInBackground(String... params) {
+            final SelectAccountActivity a = state.activity;
             if (a == null) {
-                return false;
+                return AUTH_FAIL;
             }
             
             final String account = params[0];
-            final AppEngineClient client = new AppEngineClient(a.getApplicationContext(),
-                    "mydroidlink.appspot.com", null);
-            boolean authSuccess = false;
             
-            for (int remainingRetries = 3; !authSuccess && remainingRetries > 0; --remainingRetries) {
+            final AppEngineClient client = new AppEngineClient(a.getApplicationContext(),
+                    SERVER_HOST, null);
+            client.setHttpUserAgent(USER_AGENT);
+            client.setAccount(account);
+            
+            int authResult = AUTH_FAIL;
+            for (int remainingRetries = 3; authResult != AUTH_OK && remainingRetries > 0; --remainingRetries) {
                 try {
-                    final HttpResponse resp = client.execute(new HttpGet("/"));
+                    final HttpResponse resp = client.execute(new HttpGet("https://" + SERVER_HOST));
                     final int sc = resp.getStatusLine().getStatusCode();
                     if (sc == 200) {
-                        authSuccess = true;
+                        authResult = AUTH_OK;
                     } else {
                         Log.i(TAG, "Failed to check account availability: retry");
                     }
                 } catch (IOException e) {
                     Log.i(TAG, "Failed to check account availability:" + " retry", e);
                 } catch (AppEngineAuthenticationException e) {
+                    if (e.isAuthenticationPending()) {
+                        authPendingIntent = e.getPendingAuthenticationPermissionActivity();
+                        authResult = AUTH_PENDING;
+                    }
                     Log.w(TAG, "Failed to authenticate account " + account, e);
                     break;
                 }
             }
             
-            return authSuccess;
+            return authResult;
+        }
+        
+        @Override
+        protected void onPreExecute() {
+            if (state.activity != null) {
+                state.activity.showDialog(AUTH_PROGRESS_DIALOG);
+            }
+        }
+        
+        @Override
+        protected void onPostExecute(Integer result) {
+            final SelectAccountActivity a = state.activity;
+            
+            switch (result) {
+                case AUTH_PENDING:
+                    if (a != null) {
+                        a.dismissDialog(AUTH_PROGRESS_DIALOG);
+                        a.startActivityForResult(authPendingIntent, GRANT_AUTH_PERMISSION_REQUEST);
+                    }
+                    break;
+                case AUTH_FAIL:
+                    if (a != null) {
+                        a.dismissDialog(AUTH_PROGRESS_DIALOG);
+                        a.showDialog(AUTH_ERROR_DIALOG);
+                    }
+                    break;
+                case AUTH_OK:
+                    if (a != null) {
+                        a.setResult(RESULT_OK);
+                        a.finish();
+                    }
+            }
         }
     }
 }
