@@ -72,6 +72,9 @@ public class EventsActivity extends ListActivity {
         final Cursor c = managedQuery(EventsContentProvider.CONTENT_URI, EVENT_COLUMNS, null, null,
             null);
         setListAdapter(new EventCursorAdapter(this, c));
+        
+        findViewById(R.id.robot).setVisibility(
+            getResources().getBoolean(R.bool.show_robot) ? View.VISIBLE : View.GONE);
     }
     
     @Override

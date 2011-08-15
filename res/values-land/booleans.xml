@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <bool name="fullscreen">true</bool>
+    <bool name="show_robot">true</bool>
+    <bool name="show_event_message">true</bool>
 </resources>

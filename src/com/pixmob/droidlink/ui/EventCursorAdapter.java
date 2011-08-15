@@ -36,8 +36,8 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -58,7 +58,8 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         EVENT_ICONS.put(Constants.SMS_EVENT_TYPE, R.drawable.ic_sms_mms);
     }
     
-    private boolean deviceCanCall;
+    private final boolean deviceCanCall;
+    private final boolean showMessage;
     
     public EventCursorAdapter(Context context, Cursor c) {
         super(context, R.layout.event_row, c, new String[] { KEY_FROM_NAME, KEY_FROM_NUMBER,
@@ -70,6 +71,8 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         final TelephonyManager tm = (TelephonyManager) context
                 .getSystemService(Context.TELEPHONY_SERVICE);
         deviceCanCall = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
+        
+        showMessage = context.getResources().getBoolean(R.bool.show_event_message);
     }
     
     @Override
@@ -81,8 +84,9 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         final int type = cursor.getInt(cursor.getColumnIndex(KEY_TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
-                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
+            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE);
         
         final String message = cursor.getString(cursor.getColumnIndex(KEY_MESSAGE));
         
@@ -106,14 +110,11 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         tv.setText(eventNumber);
         
         tv = (TextView) v.findViewById(R.id.event_date);
-        if (tv != null) {
-            tv.setText(eventDate);
-        }
+        tv.setText(eventDate);
         
         tv = (TextView) v.findViewById(R.id.event_message);
-        if (tv != null) {
-            tv.setText(message);
-        }
+        tv.setText(message);
+        tv.setVisibility(showMessage ? View.VISIBLE : View.GONE);
         
         ImageView iv = (ImageView) v.findViewById(R.id.event_icon);
         if (typeResourceId != null) {
@@ -129,10 +130,13 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         iv.setTag(TAG_NUMBER, number);
         iv.setOnClickListener(this);
         
+        View divider = v.findViewById(R.id.vertical_divider);
         if (deviceCanCall) {
             iv.setVisibility(number != null ? View.VISIBLE : View.INVISIBLE);
+            divider.setVisibility(View.VISIBLE);
         } else {
             iv.setVisibility(View.GONE);
+            divider.setVisibility(View.GONE);
         }
     }
     
