@@ -25,6 +25,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
 import android.accounts.Account;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -222,6 +223,13 @@ public class SelectAccountActivity extends ListActivity {
         }
     }
     
+    private static void dismissDialog(Activity a, int dialogId) {
+        try {
+            a.dismissDialog(dialogId);
+        } catch (IllegalArgumentException e) {
+        }
+    }
+    
     private static class State {
         public SelectAccountActivity activity;
         public CheckAccountTask checkAccountTask;
@@ -251,32 +259,36 @@ public class SelectAccountActivity extends ListActivity {
             }
             
             final String account = params[0];
-            
+            final HttpGet request = new HttpGet("https://" + SERVER_HOST);
             final AppEngineClient client = new AppEngineClient(a.getApplicationContext(),
                     SERVER_HOST, null);
             client.setHttpUserAgent(USER_AGENT);
             client.setAccount(account);
             
             int authResult = AUTH_FAIL;
-            for (int remainingRetries = 3; authResult != AUTH_OK && remainingRetries > 0; --remainingRetries) {
-                try {
-                    final HttpResponse resp = client.execute(new HttpGet("https://" + SERVER_HOST));
-                    final int sc = resp.getStatusLine().getStatusCode();
-                    if (sc == 200) {
-                        authResult = AUTH_OK;
-                    } else {
-                        Log.i(TAG, "Failed to check account availability: retry");
+            try {
+                for (int remainingRetries = 3; authResult != AUTH_OK && remainingRetries > 0; --remainingRetries) {
+                    try {
+                        final HttpResponse resp = client.execute(request);
+                        final int sc = resp.getStatusLine().getStatusCode();
+                        if (sc == 200) {
+                            authResult = AUTH_OK;
+                        } else {
+                            Log.i(TAG, "Failed to check account availability: retry");
+                        }
+                    } catch (IOException e) {
+                        Log.i(TAG, "Failed to check account availability:" + " retry", e);
+                    } catch (AppEngineAuthenticationException e) {
+                        if (e.isAuthenticationPending()) {
+                            authPendingIntent = e.getPendingAuthenticationPermissionActivity();
+                            authResult = AUTH_PENDING;
+                        }
+                        Log.w(TAG, "Failed to authenticate account " + account, e);
+                        break;
                     }
-                } catch (IOException e) {
-                    Log.i(TAG, "Failed to check account availability:" + " retry", e);
-                } catch (AppEngineAuthenticationException e) {
-                    if (e.isAuthenticationPending()) {
-                        authPendingIntent = e.getPendingAuthenticationPermissionActivity();
-                        authResult = AUTH_PENDING;
-                    }
-                    Log.w(TAG, "Failed to authenticate account " + account, e);
-                    break;
                 }
+            } finally {
+                client.close();
             }
             
             return authResult;
@@ -296,13 +308,13 @@ public class SelectAccountActivity extends ListActivity {
             switch (result) {
                 case AUTH_PENDING:
                     if (a != null) {
-                        a.dismissDialog(AUTH_PROGRESS_DIALOG);
+                        dismissDialog(a, AUTH_PROGRESS_DIALOG);
                         a.startActivityForResult(authPendingIntent, GRANT_AUTH_PERMISSION_REQUEST);
                     }
                     break;
                 case AUTH_FAIL:
                     if (a != null) {
-                        a.dismissDialog(AUTH_PROGRESS_DIALOG);
+                        dismissDialog(a, AUTH_PROGRESS_DIALOG);
                         a.showDialog(AUTH_ERROR_DIALOG);
                     }
                     break;
