@@ -82,6 +82,9 @@ public class MissedCallHandlerService extends IntentService {
                         Log.i(TAG, "Got missed call: number=" + fromNumber + ", name=" + fromName
                                 + ", time=" + new Date(callTime));
                         writeMissedCallEvent(fromNumber, fromName, callTime);
+                        
+                        // Start the synchronization service.
+                        startService(new Intent(this, SyncService.class));
                     } else {
                         if (DEVELOPER_MODE) {
                             Log.w(TAG, "Missed call not found!");

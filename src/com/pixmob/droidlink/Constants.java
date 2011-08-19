@@ -28,6 +28,10 @@ public final class Constants {
      * HTTP User Agent.
      */
     public static final String USER_AGENT = "Droid Link";
+    /**
+     * Remote API version.
+     */
+    public static final int REMOTE_API_VERSION = 1;
     
     /**
      * Event type for a missed call.
@@ -55,6 +59,7 @@ public final class Constants {
     public static final String SP_KEY_LAST_CALL_STATE = "lastCallState";
     public static final String SP_KEY_DEVICE_ID = "deviceId";
     public static final String SP_KEY_DEVICE_NAME = "deviceName";
+    public static final String SP_KEY_SYNC_REQUIRED = "syncRequired";
     
     private Constants() {
     }

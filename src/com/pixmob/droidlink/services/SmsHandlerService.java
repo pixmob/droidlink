@@ -91,8 +91,13 @@ public class SmsHandlerService extends IntentService {
             
             Log.i(TAG, "Got SMS: number=" + fromAddress + ", name=" + fromDisplayName + ", time="
                     + message.getTimestampMillis());
-            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(), message
-                    .getTimestampMillis());
+            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(),
+                message.getTimestampMillis());
+        }
+        
+        if (pdus.length != 0) {
+            // Start the synchronization service.
+            startService(new Intent(this, SyncService.class));
         }
     }
     
