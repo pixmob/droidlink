@@ -43,7 +43,6 @@ import org.apache.http.entity.StringEntity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import android.app.IntentService;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -53,6 +52,8 @@ import android.net.NetworkInfo;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.pixmob.actionservice.ActionExecutionFailedException;
+import com.pixmob.actionservice.ActionService;
 import com.pixmob.appengine.client.AppEngineClient;
 import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
@@ -61,7 +62,7 @@ import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
  * Synchronize with the server.
  * @author Pixmob
  */
-public class SyncService extends IntentService {
+public class SyncService extends ActionService {
     private static final int REQUEST_OK = 200;
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
@@ -78,7 +79,8 @@ public class SyncService extends IntentService {
     }
     
     @Override
-    protected void onHandleIntent(Intent intent) {
+    protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
+            InterruptedException {
         if (!isReadyToSync()) {
             Log.i(TAG, "Device is not ready for synchronization: try later");
             return;
@@ -97,7 +99,7 @@ public class SyncService extends IntentService {
         try {
             doSync(client);
         } catch (Exception e) {
-            Log.e(TAG, "Sync error", e);
+            throw new ActionExecutionFailedException("Sync error", e);
         } finally {
             client.close();
         }
