@@ -28,6 +28,9 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 
+import com.pixmob.droidlink.features.Features;
+import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
+
 /**
  * Generate an unique identifier for this device.
  * @author Pixmob
@@ -57,11 +60,7 @@ public class DeviceIdGeneratorService extends IntentService {
             prefsEditor.putString(SP_KEY_DEVICE_ID, deviceId);
             prefsEditor.putString(SP_KEY_DEVICE_NAME, deviceName);
             
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-                prefsEditor.apply();
-            } else {
-                prefsEditor.commit();
-            }
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         }
     }
 }

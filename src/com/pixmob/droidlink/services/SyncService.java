@@ -50,11 +50,12 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.pixmob.appengine.client.AppEngineClient;
+import com.pixmob.droidlink.features.Features;
+import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 
 /**
  * Synchronize with the server.
@@ -201,11 +202,7 @@ public class SyncService extends IntentService {
                         Log.i(TAG, "Event upload successful");
                         
                         prefsEditor.putBoolean(SP_KEY_SYNC_REQUIRED, false);
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-                            prefsEditor.apply();
-                        } else {
-                            prefsEditor.commit();
-                        }
+                        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
                     }
                 }
             } else {

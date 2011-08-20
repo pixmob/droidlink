@@ -21,11 +21,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.pixmob.droidlink.Constants;
+import com.pixmob.droidlink.features.Features;
+import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.services.MissedCallHandlerService;
 
 /**
@@ -76,14 +77,6 @@ public class MissedCallReceiver extends BroadcastReceiver {
         }
         
         prefsEditor.putString(Constants.SP_KEY_LAST_CALL_STATE, callState);
-        storePrefs();
-    }
-    
-    private void storePrefs() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            prefsEditor.apply();
-        } else {
-            prefsEditor.commit();
-        }
+        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
     }
 }

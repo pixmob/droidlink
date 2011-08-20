@@ -34,7 +34,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -49,6 +48,8 @@ import com.pixmob.appengine.client.AppEngineAuthenticationException;
 import com.pixmob.appengine.client.AppEngineClient;
 import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.features.Features;
+import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -68,11 +69,7 @@ public class SelectAccountActivity extends ListActivity {
     
     public void onSelectAccount(View v) {
         prefsEditor.putString(Constants.SP_KEY_ACCOUNT, accountName);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            prefsEditor.apply();
-        } else {
-            prefsEditor.commit();
-        }
+        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         checkAccount();
     }
     
