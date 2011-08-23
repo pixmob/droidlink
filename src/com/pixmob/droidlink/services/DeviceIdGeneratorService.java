@@ -61,6 +61,9 @@ public class DeviceIdGeneratorService extends IntentService {
             prefsEditor.putString(SP_KEY_DEVICE_NAME, deviceName);
             
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+            
+            // Upload the device name asynchronously via this service.
+            startService(new Intent(this, DeviceNameUploadService.class));
         }
     }
 }
