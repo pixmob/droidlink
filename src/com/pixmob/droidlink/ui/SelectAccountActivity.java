@@ -16,13 +16,19 @@
 package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.SERVER_HOST;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
 import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.Constants.USER_AGENT;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.app.Activity;
@@ -51,6 +57,7 @@ import com.pixmob.droidlink.R;
 import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.util.Accounts;
+import com.pixmob.droidlink.util.HttpUtils;
 
 /**
  * Select a Google account for connecting the user device.
@@ -196,8 +203,11 @@ public class SelectAccountActivity extends ListActivity {
     }
     
     private void checkAccount() {
+        final String deviceId = prefs.getString(SP_KEY_DEVICE_ID, null);
+        final String deviceName = prefs.getString(SP_KEY_DEVICE_NAME, null);
+        
         state.checkAccountTask = new CheckAccountTask(state);
-        state.checkAccountTask.execute(accountName);
+        state.checkAccountTask.execute(accountName, deviceId, deviceName);
     }
     
     private class AccountAdapter extends ArrayAdapter<Account> {
@@ -256,7 +266,22 @@ public class SelectAccountActivity extends ListActivity {
             }
             
             final String account = params[0];
-            final HttpGet request = new HttpGet("https://" + SERVER_HOST);
+            final String deviceId = params[1];
+            final String deviceName = params[2];
+            
+            final JSONObject jsonData = new JSONObject();
+            try {
+                jsonData.put("name", deviceName);
+            } catch (JSONException ignore) {
+            }
+            
+            final HttpPut request = new HttpPut(HttpUtils.createServiceUri("/device/" + deviceId));
+            HttpUtils.prepareJsonRequest(request);
+            try {
+                request.setEntity(new StringEntity(jsonData.toString()));
+            } catch (UnsupportedEncodingException ignore) {
+            }
+            
             final AppEngineClient client = new AppEngineClient(a.getApplicationContext(),
                     SERVER_HOST, null);
             client.setHttpUserAgent(USER_AGENT);
@@ -268,7 +293,7 @@ public class SelectAccountActivity extends ListActivity {
                     try {
                         final HttpResponse resp = client.execute(request);
                         final int sc = resp.getStatusLine().getStatusCode();
-                        if (sc == 200) {
+                        if (HttpUtils.isStatusOK(sc)) {
                             authResult = AUTH_OK;
                         } else {
                             Log.i(TAG, "Failed to check account availability: retry");
