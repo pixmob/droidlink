@@ -55,7 +55,7 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
     private static final Map<Integer, Integer> EVENT_ICONS = new HashMap<Integer, Integer>(2);
     static {
         EVENT_ICONS.put(Constants.MISSED_CALL_EVENT, R.drawable.ic_missed_call);
-        EVENT_ICONS.put(Constants.SMS_EVENT_TYPE, R.drawable.ic_sms_mms);
+        EVENT_ICONS.put(Constants.RECEIVED_SMS_EVENT_TYPE, R.drawable.ic_sms_mms);
     }
     private static Boolean deviceCanCall;
     private final boolean showMessage;

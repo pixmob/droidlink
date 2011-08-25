@@ -108,7 +108,7 @@ public class SmsHandlerService extends IntentService {
         cv.put(KEY_FROM_NUMBER, number);
         cv.put(KEY_FROM_NAME, name);
         cv.put(KEY_MESSAGE, message);
-        cv.put(KEY_TYPE, Constants.SMS_EVENT_TYPE);
+        cv.put(KEY_TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
         
         final Uri uri = getContentResolver().insert(EventsContentProvider.CONTENT_URI, cv);
         if (DEVELOPER_MODE) {

@@ -68,7 +68,7 @@ class EventsDatabaseHelper extends SQLiteOpenHelper {
             cv.put(KEY_FROM_NUMBER, "1234567890");
             cv.put(KEY_FROM_NAME, "John Doe");
             cv.put(KEY_MESSAGE, "Hello world!");
-            cv.put(KEY_TYPE, Constants.SMS_EVENT_TYPE);
+            cv.put(KEY_TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
             db.insert(EVENTS_TABLE, "not_null", cv);
             
             cv = new ContentValues();
