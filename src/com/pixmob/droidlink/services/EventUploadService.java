@@ -36,6 +36,7 @@ import java.net.URI;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.StringEntity;
 import org.json.JSONObject;
 
@@ -131,7 +132,7 @@ public class EventUploadService extends AbstractNetworkService {
             final HttpPut req = new HttpPut();
             HttpUtils.prepareJsonRequest(req);
             HttpResponse resp;
-            int statusCode;
+            int statusCode = 500;
             
             for (int i = 0; i < eventCount; ++i) {
                 final int eventId = jsonEvents.keyAt(i);
@@ -146,8 +147,16 @@ public class EventUploadService extends AbstractNetworkService {
                 }
                 
                 // Send the request.
-                resp = client.execute(req);
-                statusCode = resp.getStatusLine().getStatusCode();
+                for (int remainingRetries = 3; remainingRetries != 0; --remainingRetries) {
+                    try {
+                        resp = client.execute(req);
+                        statusCode = resp.getStatusLine().getStatusCode();
+                        break;
+                    } catch (ConnectTimeoutException e) {
+                        Log.w(TAG, "Event " + eventId + " upload failed: retrying", e);
+                    }
+                }
+                
                 if (HttpUtils.isStatusOK(statusCode)) {
                     // Update event upload status.
                     final ContentValues cv = new ContentValues(1);
