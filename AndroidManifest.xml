@@ -45,7 +45,7 @@
         <service android:name=".services.MissedCallHandlerService"></service>
         <service android:name=".services.SmsHandlerService"></service>
         <service android:name=".services.DeviceIdGeneratorService"></service>
-        <service android:name=".services.SyncService"></service>
+        <service android:name=".services.EventUploadService"></service>
         <service android:name=".services.DeviceNameUploadService"></service>
     </application>
 </manifest>

@@ -41,7 +41,7 @@ public class EventsContentProvider extends ContentProvider {
     public static final String KEY_FROM_NUMBER = "fromnumber";
     public static final String KEY_FROM_NAME = "fromname";
     public static final String KEY_MESSAGE = "message";
-    public static final String KEY_UPLOAD_TIME = "uploadtime";
+    public static final String KEY_UPLOADED = "uploaded";
     static final String EVENTS_TABLE = "events";
     
     public static final Uri CONTENT_URI = Uri
@@ -146,6 +146,9 @@ public class EventsContentProvider extends ContentProvider {
         }
         if (!values.containsKey(KEY_DATE)) {
             values.put(KEY_DATE, System.currentTimeMillis());
+        }
+        if (!values.containsKey(KEY_UPLOADED)) {
+            values.put(KEY_UPLOADED, Integer.valueOf(0));
         }
         if (values.containsKey(KEY_FROM_NAME)) {
             final String name = values.getAsString(KEY_FROM_NAME);

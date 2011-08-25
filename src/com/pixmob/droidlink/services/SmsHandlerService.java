@@ -97,7 +97,7 @@ public class SmsHandlerService extends IntentService {
         
         if (pdus.length != 0) {
             // Start the synchronization service.
-            startService(new Intent(this, SyncService.class));
+            startService(new Intent(this, EventUploadService.class));
         }
     }
     

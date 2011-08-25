@@ -25,7 +25,7 @@ import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NUMB
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_ID;
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_MESSAGE;
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_TYPE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_UPLOAD_TIME;
+import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_UPLOADED;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -43,7 +43,7 @@ class EventsDatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_CREATE = "CREATE TABLE " + EVENTS_TABLE + " (" + KEY_ID
             + " INTEGER PRIMARY KEY AUTOINCREMENT, " + KEY_DEVICE_ID + " TEXT, " + KEY_DATE
             + " LONG, " + KEY_TYPE + " INT, " + KEY_FROM_NUMBER + " TEXT, " + KEY_FROM_NAME
-            + " TEXT, " + KEY_MESSAGE + " TEXT, " + KEY_UPLOAD_TIME + " LONG);";
+            + " TEXT, " + KEY_MESSAGE + " TEXT, " + KEY_UPLOADED + " INT);";
     
     public EventsDatabaseHelper(final Context context, final String name,
             final CursorFactory factory, final int version) {
