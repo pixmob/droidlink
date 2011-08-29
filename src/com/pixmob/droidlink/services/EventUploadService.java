@@ -16,12 +16,7 @@
 package com.pixmob.droidlink.services;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
-import static com.pixmob.droidlink.Constants.SERVER_HOST;
-import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
-import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
-import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.Constants.USER_AGENT;
 import static com.pixmob.droidlink.providers.EventsContentProvider.CONTENT_URI;
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DATE;
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DEVICE_ID;
@@ -32,31 +27,31 @@ import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_MESSAGE;
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_TYPE;
 import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_UPLOADED;
 
-import java.net.URI;
+import java.io.IOException;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.entity.StringEntity;
 import org.json.JSONObject;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.util.Log;
 import android.util.SparseArray;
 
 import com.pixmob.actionservice.ActionExecutionFailedException;
-import com.pixmob.appengine.client.AppEngineClient;
-import com.pixmob.droidlink.util.HttpUtils;
+import com.pixmob.appengine.client.AppEngineAuthenticationException;
+import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.net.NetworkClient;
+import com.pixmob.droidlink.ui.EventsActivity;
 
 /**
  * Upload events to the server.
  * @author Pixmob
  */
 public class EventUploadService extends AbstractNetworkService {
-    private SharedPreferences prefs;
+    private PendingIntent openMainActivity;
     
     public EventUploadService() {
         super("EventUpload");
@@ -65,37 +60,39 @@ public class EventUploadService extends AbstractNetworkService {
     @Override
     public void onCreate() {
         super.onCreate();
-        prefs = getSharedPreferences(SHARED_PREFERENCES_FILE, MODE_PRIVATE);
+        openMainActivity = PendingIntent.getActivity(this, 0,
+            new Intent(this, EventsActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
     }
     
     @Override
     protected void onHandleActionInternal(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
-        final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
-        if (accountName == null) {
-            Log.w(TAG, "No account is selected: cannot upload events");
-            return;
-        }
-        final String deviceId = prefs.getString(SP_KEY_DEVICE_ID, null);
-        if (deviceId == null) {
-            Log.w(TAG, "No device id set: cannot upload events");
-            return;
+        final NetworkClient client = NetworkClient.newInstance(this);
+        if (client == null) {
+            throw new ActionExecutionFailedException("Failed to create NetworkClient");
         }
         
-        final AppEngineClient client = new AppEngineClient(this, SERVER_HOST);
-        client.setAccount(accountName);
-        client.setHttpUserAgent(USER_AGENT);
+        final Notification n = new Notification(android.R.drawable.stat_sys_upload,
+                getString(R.string.event_upload_running), System.currentTimeMillis());
+        n.setLatestEventInfo(this, getString(R.string.app_name),
+            getString(R.string.event_upload_running), openMainActivity);
+        startForeground(R.string.event_upload_running, n);
         
         try {
-            uploadEvents(client, deviceId);
+            uploadEvents(client);
+        } catch (ActionExecutionFailedException e) {
+            showErrorNotification();
+            throw e;
         } catch (Exception e) {
+            showErrorNotification();
             throw new ActionExecutionFailedException("Event upload error", e);
         } finally {
+            stopForeground(true);
             client.close();
         }
     }
     
-    private void uploadEvents(AppEngineClient client, String deviceId) throws Exception {
+    private void uploadEvents(NetworkClient client) throws Exception {
         // Get events to upload.
         final String[] eventToUploadColumns = { KEY_ID, KEY_TYPE, KEY_DATE, KEY_FROM_NUMBER,
                 KEY_FROM_NAME, KEY_MESSAGE };
@@ -116,9 +113,8 @@ public class EventUploadService extends AbstractNetworkService {
                     final String eventMessage = c.getString(c.getColumnIndex(KEY_MESSAGE));
                     
                     final JSONObject jsonEvent = new JSONObject();
-                    jsonEvent.put("type", eventType).put("date", eventDate)
-                            .put("number", eventNumber).put("name", eventName)
-                            .put("message", eventMessage);
+                    jsonEvent.put("type", eventType).put("date", eventDate).put("number",
+                        eventNumber).put("name", eventName).put("message", eventMessage);
                     jsonEvents.append(eventId, jsonEvent);
                 } while (c.moveToNext());
             }
@@ -129,51 +125,47 @@ public class EventUploadService extends AbstractNetworkService {
         if (eventCount == 0) {
             Log.i(TAG, "No event to upload");
         } else {
-            final HttpPut req = new HttpPut();
-            HttpUtils.prepareJsonRequest(req);
-            HttpResponse resp;
-            int statusCode = 500;
+            final String[] updateArgs = new String[2];
             
             for (int i = 0; i < eventCount; ++i) {
                 final int eventId = jsonEvents.keyAt(i);
                 final JSONObject jsonEvent = jsonEvents.get(eventId);
                 
-                req.setURI(URI.create(HttpUtils.createServiceUri("/device/" + deviceId + "/"
-                        + eventId)));
-                req.setEntity(new StringEntity(jsonEvent.toString()));
-                
                 if (DEVELOPER_MODE) {
-                    Log.i(TAG, "Sending event " + eventId + " to " + req.getURI());
+                    Log.i(TAG, "Sending event " + eventId);
+                }
+                try {
+                    client.put("/device/" + client.getDeviceId() + "/" + eventId, jsonEvent);
+                } catch (AppEngineAuthenticationException e) {
+                    throw new ActionExecutionFailedException(
+                            "Authentication failed: cannot upload events", e);
+                } catch (IOException e) {
+                    throw new ActionExecutionFailedException("I/O error: cannot upload events", e);
                 }
                 
-                // Send the request.
-                for (int remainingRetries = 3; remainingRetries != 0; --remainingRetries) {
-                    try {
-                        resp = client.execute(req);
-                        statusCode = resp.getStatusLine().getStatusCode();
-                        break;
-                    } catch (ConnectTimeoutException e) {
-                        Log.w(TAG, "Event " + eventId + " upload failed: retrying", e);
-                    }
-                }
+                // Update event upload status.
+                final ContentValues cv = new ContentValues(1);
+                cv.put(KEY_UPLOADED, 1);
                 
-                if (HttpUtils.isStatusOK(statusCode)) {
-                    // Update event upload status.
-                    final ContentValues cv = new ContentValues(1);
-                    cv.put(KEY_UPLOADED, 1);
-                    
-                    final int eventsUpdated = getContentResolver().update(CONTENT_URI, cv,
-                        KEY_ID + "=? and " + KEY_DEVICE_ID + "=?",
-                        new String[] { String.valueOf(eventId), deviceId });
-                    if (eventsUpdated != 1) {
-                        Log.w(TAG, "Failed to update upload status for event " + eventId);
-                    } else {
-                        Log.i(TAG, "Event " + eventId + ": upload successful");
-                    }
+                updateArgs[0] = String.valueOf(eventId);
+                updateArgs[1] = client.getDeviceId();
+                final int eventsUpdated = getContentResolver().update(CONTENT_URI, cv,
+                    KEY_ID + "=? and " + KEY_DEVICE_ID + "=?", updateArgs);
+                if (eventsUpdated != 1) {
+                    Log.w(TAG, "Failed to update upload status for event " + eventId);
                 } else {
-                    Log.w(TAG, "Failed to upload event " + eventId + ": error " + statusCode);
+                    Log.i(TAG, "Event " + eventId + ": upload successful");
                 }
             }
         }
+    }
+    
+    private void showErrorNotification() {
+        final Notification nError = new Notification(android.R.drawable.stat_sys_warning,
+                getString(R.string.event_upload_error), System.currentTimeMillis());
+        nError.setLatestEventInfo(this, getString(R.string.app_name),
+            getString(R.string.event_upload_error), openMainActivity);
+        final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        nm.notify(R.string.event_upload_error, nError);
     }
 }

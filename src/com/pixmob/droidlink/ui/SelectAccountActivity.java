@@ -15,18 +15,11 @@
  */
 package com.pixmob.droidlink.ui;
 
-import static com.pixmob.droidlink.Constants.SERVER_HOST;
-import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.Constants.USER_AGENT;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -51,13 +44,12 @@ import android.widget.CheckedTextView;
 import android.widget.ListView;
 
 import com.pixmob.appengine.client.AppEngineAuthenticationException;
-import com.pixmob.appengine.client.AppEngineClient;
 import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.R;
 import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.util.Accounts;
-import com.pixmob.droidlink.util.HttpUtils;
 
 /**
  * Select a Google account for connecting the user device.
@@ -83,18 +75,18 @@ public class SelectAccountActivity extends ListActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE_DIALOG == id) {
-            return new AlertDialog.Builder(this)
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            setResult(RESULT_CANCELED);
-                            finish();
-                        }
-                    }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
+            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        setResult(RESULT_CANCELED);
+                        finish();
+                    }
+                }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
         }
         if (AUTH_ERROR_DIALOG == id) {
-            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null)
-                    .setTitle(R.string.error).setMessage(R.string.auth_error).create();
+            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null).setTitle(
+                R.string.error).setMessage(R.string.auth_error).create();
         }
         if (AUTH_PROGRESS_DIALOG == id) {
             final ProgressDialog d = new ProgressDialog(this);
@@ -203,11 +195,9 @@ public class SelectAccountActivity extends ListActivity {
     }
     
     private void checkAccount() {
-        final String deviceId = prefs.getString(SP_KEY_DEVICE_ID, null);
         final String deviceName = prefs.getString(SP_KEY_DEVICE_NAME, null);
-        
         state.checkAccountTask = new CheckAccountTask(state);
-        state.checkAccountTask.execute(accountName, deviceId, deviceName);
+        state.checkAccountTask.execute(deviceName);
     }
     
     private class AccountAdapter extends ArrayAdapter<Account> {
@@ -265,50 +255,26 @@ public class SelectAccountActivity extends ListActivity {
                 return AUTH_FAIL;
             }
             
-            final String account = params[0];
-            final String deviceId = params[1];
-            final String deviceName = params[2];
-            
+            final String deviceName = params[0];
             final JSONObject jsonData = new JSONObject();
             try {
                 jsonData.put("name", deviceName);
             } catch (JSONException ignore) {
             }
             
-            final HttpPut request = new HttpPut(HttpUtils.createServiceUri("/device/" + deviceId));
-            HttpUtils.prepareJsonRequest(request);
-            try {
-                request.setEntity(new StringEntity(jsonData.toString()));
-            } catch (UnsupportedEncodingException ignore) {
-            }
-            
-            final AppEngineClient client = new AppEngineClient(a.getApplicationContext(),
-                    SERVER_HOST, null);
-            client.setHttpUserAgent(USER_AGENT);
-            client.setAccount(account);
-            
+            final NetworkClient client = NetworkClient.newInstance(a);
             int authResult = AUTH_FAIL;
             try {
-                for (int remainingRetries = 3; authResult != AUTH_OK && remainingRetries > 0; --remainingRetries) {
-                    try {
-                        final HttpResponse resp = client.execute(request);
-                        final int sc = resp.getStatusLine().getStatusCode();
-                        if (HttpUtils.isStatusOK(sc)) {
-                            authResult = AUTH_OK;
-                        } else {
-                            Log.i(TAG, "Failed to check account availability: retry");
-                        }
-                    } catch (IOException e) {
-                        Log.i(TAG, "Failed to check account availability:" + " retry", e);
-                    } catch (AppEngineAuthenticationException e) {
-                        if (e.isAuthenticationPending()) {
-                            authPendingIntent = e.getPendingAuthenticationPermissionActivity();
-                            authResult = AUTH_PENDING;
-                        }
-                        Log.w(TAG, "Failed to authenticate account " + account, e);
-                        break;
-                    }
+                client.put("/device/" + client.getDeviceId(), jsonData);
+                authResult = AUTH_OK;
+            } catch (AppEngineAuthenticationException e) {
+                if (e.isAuthenticationPending()) {
+                    authPendingIntent = e.getPendingAuthenticationPermissionActivity();
+                    authResult = AUTH_PENDING;
                 }
+                Log.w(TAG, "Failed to authenticate account", e);
+            } catch (IOException e) {
+                Log.i(TAG, "Failed to check account availability", e);
             } finally {
                 client.close();
             }
