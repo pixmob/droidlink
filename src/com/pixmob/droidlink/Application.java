@@ -20,7 +20,7 @@ import android.content.Intent;
 
 import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.StrictModeFeature;
-import com.pixmob.droidlink.services.DeviceIdGeneratorService;
+import com.pixmob.droidlink.services.DeviceInitService;
 
 /**
  * Application entry point.
@@ -37,6 +37,6 @@ public class Application extends android.app.Application {
         }
         
         // Make sure a device id is generated for this device.
-        startService(new Intent(this, DeviceIdGeneratorService.class));
+        startService(new Intent(this, DeviceInitService.class));
     }
 }

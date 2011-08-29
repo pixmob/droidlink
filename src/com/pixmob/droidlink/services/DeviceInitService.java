@@ -32,14 +32,14 @@ import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 
 /**
- * Generate an unique identifier for this device.
+ * Initialize this device: generate an unique identifier, register to C2DM.
  * @author Pixmob
  */
-public class DeviceIdGeneratorService extends IntentService {
+public class DeviceInitService extends IntentService {
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
     
-    public DeviceIdGeneratorService() {
+    public DeviceInitService() {
         super("DeviceIdGenerator");
     }
     
@@ -52,6 +52,10 @@ public class DeviceIdGeneratorService extends IntentService {
     
     @Override
     protected void onHandleIntent(Intent intent) {
+        generateId();
+    }
+    
+    private void generateId() {
         if (!prefs.contains(SP_KEY_DEVICE_ID)) {
             final String deviceName = Build.MODEL;
             Log.i(TAG, "Generating a new identifier for this device (" + deviceName + ")");
@@ -61,9 +65,6 @@ public class DeviceIdGeneratorService extends IntentService {
             prefsEditor.putString(SP_KEY_DEVICE_NAME, deviceName);
             
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
-            
-            // Upload the device name asynchronously via this service.
-            startService(new Intent(this, DeviceNameUploadService.class));
         }
     }
 }
