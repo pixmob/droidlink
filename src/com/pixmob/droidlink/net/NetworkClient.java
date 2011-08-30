@@ -132,46 +132,72 @@ public class NetworkClient {
             }
         }
         
-        final HttpResponse resp = client.execute(request);
-        final int statusCode = resp.getStatusLine().getStatusCode();
-        
-        if (DEVELOPER_MODE) {
-            Log.i(TAG, "Result for request " + requestUri + ": " + statusCode);
-        }
-        
-        if (isStatusNotFound(statusCode)) {
-            throw new NetworkClientException(requestUri, "Resource not found");
-        }
-        if (isStatusError(statusCode)) {
-            throw new NetworkClientException(requestUri, "Request failed on remote server");
-        }
-        if (!isStatusOK(statusCode)) {
-            throw new NetworkClientException(requestUri, "Request failed with error " + statusCode);
-        }
-        
-        final HttpEntity entity = resp.getEntity();
-        if (entity == null) {
-            if (DEVELOPER_MODE) {
-                Log.d(TAG, "No JSON result for request " + requestUri);
-            }
-            return null;
-        }
-        
-        final String strResp = EntityUtils.toString(entity);
-        if (TextUtils.isEmpty(strResp)) {
-            if (DEVELOPER_MODE) {
-                Log.d(TAG, "Empty JSON result for request " + requestUri);
-            }
-            return null;
-        }
-        
-        if (DEVELOPER_MODE) {
-            Log.d(TAG, "JSON result for request " + requestUri + ": " + strResp);
-        }
+        HttpResponse resp = null;
         try {
-            return new JSONObject(strResp);
-        } catch (JSONException e) {
-            throw new NetworkClientException(requestUri, "Invalid JSON result", e);
+            resp = client.execute(request);
+            
+            final int statusCode = resp.getStatusLine().getStatusCode();
+            if (DEVELOPER_MODE) {
+                Log.i(TAG, "Result for request " + requestUri + ": " + statusCode);
+            }
+            
+            if (isStatusNotFound(statusCode)) {
+                throw new NetworkClientException(requestUri, "Resource not found");
+            }
+            if (isStatusError(statusCode)) {
+                throw new NetworkClientException(requestUri, "Request failed on remote server");
+            }
+            if (!isStatusOK(statusCode)) {
+                throw new NetworkClientException(requestUri, "Request failed with error "
+                        + statusCode);
+            }
+            
+            final HttpEntity entity = resp.getEntity();
+            if (entity == null) {
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "No JSON result for request " + requestUri);
+                }
+                return null;
+            }
+            
+            final String strResp = EntityUtils.toString(entity);
+            if (TextUtils.isEmpty(strResp)) {
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "Empty JSON result for request " + requestUri);
+                }
+                return null;
+            }
+            
+            if (DEVELOPER_MODE) {
+                Log.d(TAG, "JSON result for request " + requestUri + ": " + strResp);
+            }
+            try {
+                return new JSONObject(strResp);
+            } catch (JSONException e) {
+                throw new NetworkClientException(requestUri, "Invalid JSON result", e);
+            }
+        } catch (AppEngineAuthenticationException e) {
+            closeResources(request, resp);
+            throw e;
+        } catch (IOException e) {
+            closeResources(request, resp);
+            throw e;
+        }
+    }
+    
+    private static void closeResources(HttpUriRequest request, HttpResponse response) {
+        try {
+            request.abort();
+        } catch (UnsupportedOperationException ignore) {
+        }
+        if (response != null) {
+            final HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                try {
+                    entity.consumeContent();
+                } catch (IOException ignore) {
+                }
+            }
         }
     }
     
