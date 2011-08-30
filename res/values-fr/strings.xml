@@ -9,4 +9,8 @@
     <string name="auth_error">Erreur d\'authentification.</string>
     <string name="auth_pending">Connexion en cours...</string>
     <string name="please_wait">Veuillez patienter</string>
+    <string name="device_init_running">Initialisation du système...</string>
+    <string name="device_init_error">L\'initialisation du système a échouée.</string>
+    <string name="event_upload_running">Chargement des évènements...</string>
+    <string name="event_upload_error">Le chargement des évènements a échoué.</string>
 </resources>
