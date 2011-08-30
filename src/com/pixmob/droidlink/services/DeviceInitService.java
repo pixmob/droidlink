@@ -15,7 +15,9 @@
  */
 package com.pixmob.droidlink.services;
 
+import static com.pixmob.droidlink.Constants.C2DM_SENDER_ID;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
 import static com.pixmob.droidlink.Constants.TAG;
@@ -28,6 +30,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 
+import com.google.android.c2dm.C2DMessaging;
 import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 
@@ -65,6 +68,9 @@ public class DeviceInitService extends IntentService {
             prefsEditor.putString(SP_KEY_DEVICE_NAME, deviceName);
             
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        }
+        if (!prefs.contains(SP_KEY_DEVICE_C2DM)) {
+            C2DMessaging.register(this, C2DM_SENDER_ID);
         }
     }
 }

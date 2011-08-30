@@ -15,6 +15,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
     <uses-permission android:name="android.permission.WAKE_LOCK"></uses-permission>
 
+    <permission android:name="com.pixmob.droidlink.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.pixmob.droidlink.permission.C2D_MESSAGE" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+
     <application android:icon="@drawable/icon"
         android:label="@string/app_name" android:theme="@android:style/Theme.Black.NoTitleBar"
         android:name=".Application">
@@ -47,5 +52,6 @@
         <service android:name=".services.DeviceInitService"></service>
         <service android:name=".services.EventUploadService"></service>
         <service android:name=".services.DeviceNameUploadService"></service>
+        <service android:name=".services.C2DMService" />
     </application>
 </manifest>
