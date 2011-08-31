@@ -15,14 +15,14 @@
  */
 package com.pixmob.droidlink.ui;
 
+import static android.provider.BaseColumns._ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DATE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NAME;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NUMBER;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_ID;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_TYPE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +36,8 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -61,9 +61,12 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
     private final boolean showMessage;
     
     public EventCursorAdapter(Context context, Cursor c) {
-        super(context, R.layout.event_row, c, new String[] { KEY_FROM_NAME, KEY_FROM_NUMBER,
-                KEY_DATE, KEY_MESSAGE }, new int[] { R.id.event_name, R.id.event_number,
-                R.id.event_date, R.id.event_message });
+        super(
+                context,
+                R.layout.event_row,
+                c,
+                new String[] { NAME, NUMBER, CREATED, MESSAGE },
+                new int[] { R.id.event_name, R.id.event_number, R.id.event_date, R.id.event_message });
         
         if (deviceCanCall == null) {
             // The icon for calling back a contact is hidden if the current
@@ -78,18 +81,17 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
     
     @Override
     public void bindView(View v, Context context, Cursor cursor) {
-        final String name = cursor.getString(cursor.getColumnIndex(KEY_FROM_NAME));
-        final String number = cursor.getString(cursor.getColumnIndex(KEY_FROM_NUMBER));
-        final long date = cursor.getLong(cursor.getColumnIndex(KEY_DATE));
+        final String name = cursor.getString(cursor.getColumnIndex(NAME));
+        final String number = cursor.getString(cursor.getColumnIndex(NUMBER));
+        final long date = cursor.getLong(cursor.getColumnIndex(CREATED));
         
-        final int type = cursor.getInt(cursor.getColumnIndex(KEY_TYPE));
+        final int type = cursor.getInt(cursor.getColumnIndex(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
-            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
-            DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
+                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
         
-        final String message = cursor.getString(cursor.getColumnIndex(KEY_MESSAGE));
+        final String message = cursor.getString(cursor.getColumnIndex(MESSAGE));
         
         final String eventName;
         final String eventNumber;
@@ -125,7 +127,7 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
             iv.setVisibility(View.INVISIBLE);
         }
         
-        v.setTag(TAG_ID, cursor.getLong(cursor.getColumnIndex(KEY_ID)));
+        v.setTag(TAG_ID, cursor.getLong(cursor.getColumnIndex(_ID)));
         
         iv = (ImageView) v.findViewById(R.id.event_call_back);
         iv.setTag(TAG_NUMBER, number);

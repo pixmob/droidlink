@@ -15,49 +15,58 @@
  */
 package com.pixmob.droidlink.providers;
 
+import static android.provider.BaseColumns._ID;
+import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.TAG;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CONTENT_ITEM_TYPE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CONTENT_TYPE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.providers.EventsContract.Event.DEFAULT_SORT_ORDER;
+import static com.pixmob.droidlink.providers.EventsContract.Event.DEVICE_ID;
+import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.providers.EventsContract.Event.STATE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+
+import java.util.UUID;
+
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.pixmob.droidlink.Constants;
 
 /**
  * Content provider for the events database.
  * @author Pixmob
  */
 public class EventsContentProvider extends ContentProvider {
-    public static final String KEY_ID = "_id";
-    public static final String KEY_DATE = "creationtime";
-    public static final String KEY_DEVICE_ID = "deviceid";
-    public static final String KEY_TYPE = "type";
-    public static final String KEY_FROM_NUMBER = "fromnumber";
-    public static final String KEY_FROM_NAME = "fromname";
-    public static final String KEY_MESSAGE = "message";
-    public static final String KEY_UPLOADED = "uploaded";
-    static final String EVENTS_TABLE = "events";
-    
-    public static final Uri CONTENT_URI = Uri
-            .parse("content://com.pixmob.droidlink.provider/events");
-    
     private static final String DATABASE_NAME = "events.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
+    private static final String EVENTS_TABLE = "events";
+    private static final String[] NOT_NULL_COLUMNS = { TYPE, DEVICE_ID };
+    
     private static final int EVENTS = 1;
     private static final int EVENT_ID = 2;
-    private static final String[] NOT_NULL_COLUMNS = { KEY_FROM_NUMBER, KEY_TYPE, KEY_DEVICE_ID };
     
     private static final UriMatcher URI_MATCHER;
     static {
         URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
-        URI_MATCHER.addURI("com.pixmob.droidlink.provider", "events", EVENTS);
-        URI_MATCHER.addURI("com.pixmob.droidlink.provider", "events/*", EVENT_ID);
+        URI_MATCHER.addURI(EventsContract.AUTHORITY, "events", EVENTS);
+        URI_MATCHER.addURI(EventsContract.AUTHORITY, "events/*", EVENT_ID);
     }
     
     private SQLiteDatabase db;
@@ -79,9 +88,9 @@ public class EventsContentProvider extends ContentProvider {
     public String getType(Uri uri) {
         switch (URI_MATCHER.match(uri)) {
             case EVENTS:
-                return "vnd.android.cursor.dir/vnd.pixmob.droidlink.event";
+                return CONTENT_TYPE;
             case EVENT_ID:
-                return "vnd.android.cursor.item/vnd.pixmob.droidlink.event";
+                return CONTENT_ITEM_TYPE;
             default:
                 throw new IllegalArgumentException("Unsupported Uri: " + uri);
         }
@@ -95,7 +104,7 @@ public class EventsContentProvider extends ContentProvider {
         
         switch (URI_MATCHER.match(uri)) {
             case EVENT_ID:
-                qb.appendWhere(KEY_ID + "=" + uri.getPathSegments().get(1) + "'");
+                qb.appendWhere(_ID + "=" + uri.getPathSegments().get(1) + "'");
                 break;
             default:
                 break;
@@ -103,7 +112,7 @@ public class EventsContentProvider extends ContentProvider {
         
         final String orderBy;
         if (TextUtils.isEmpty(sortOrder)) {
-            orderBy = KEY_DATE + " DESC";
+            orderBy = DEFAULT_SORT_ORDER;
         } else {
             orderBy = sortOrder;
         }
@@ -124,7 +133,7 @@ public class EventsContentProvider extends ContentProvider {
                 break;
             case EVENT_ID:
                 final String id = uri.getPathSegments().get(1);
-                String fullSelection = KEY_ID + "=" + id;
+                String fullSelection = _ID + "=" + id;
                 if (!TextUtils.isEmpty(selection)) {
                     fullSelection += " AND (" + selection + ")";
                 }
@@ -133,7 +142,7 @@ public class EventsContentProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unsupported Uri: " + uri);
         }
         
-        getContext().getContentResolver().notifyChange(uri, null);
+        getContext().getContentResolver().notifyChange(uri, null, false);
         return count;
     }
     
@@ -144,22 +153,25 @@ public class EventsContentProvider extends ContentProvider {
                 throw new SQLException("Missing value for " + notNullColumn);
             }
         }
-        if (!values.containsKey(KEY_DATE)) {
-            values.put(KEY_DATE, System.currentTimeMillis());
+        if (!values.containsKey(_ID)) {
+            values.put(_ID, UUID.randomUUID().toString());
         }
-        if (!values.containsKey(KEY_UPLOADED)) {
-            values.put(KEY_UPLOADED, Integer.valueOf(0));
+        if (!values.containsKey(CREATED)) {
+            values.put(CREATED, System.currentTimeMillis());
         }
-        if (values.containsKey(KEY_FROM_NAME)) {
-            final String name = values.getAsString(KEY_FROM_NAME);
+        if (!values.containsKey(STATE)) {
+            values.put(STATE, Integer.valueOf(EventsContract.PENDING_UPLOAD_STATE));
+        }
+        if (values.containsKey(NAME)) {
+            final String name = values.getAsString(NAME);
             if (TextUtils.isEmpty(name)) {
-                values.remove(KEY_FROM_NAME);
+                values.remove(NAME);
             }
         }
-        if (values.containsKey(KEY_FROM_NUMBER)) {
-            final String number = values.getAsString(KEY_FROM_NUMBER);
+        if (values.containsKey(NUMBER)) {
+            final String number = values.getAsString(NUMBER);
             if (TextUtils.isEmpty(number)) {
-                values.remove(KEY_FROM_NUMBER);
+                values.remove(NUMBER);
             }
         }
         
@@ -168,8 +180,8 @@ public class EventsContentProvider extends ContentProvider {
             throw new SQLException("Failed to insert row into " + uri);
         }
         
-        final Uri itemUri = ContentUris.withAppendedId(CONTENT_URI, rowID);
-        getContext().getContentResolver().notifyChange(itemUri, null);
+        final Uri itemUri = ContentUris.withAppendedId(EventsContract.CONTENT_URI, rowID);
+        getContext().getContentResolver().notifyChange(itemUri, null, false);
         return itemUri;
     }
     
@@ -182,7 +194,7 @@ public class EventsContentProvider extends ContentProvider {
                 break;
             case EVENT_ID:
                 final String id = uri.getPathSegments().get(1);
-                String fullSelection = KEY_ID + "=" + id;
+                String fullSelection = _ID + "=" + id;
                 if (!TextUtils.isEmpty(selection)) {
                     fullSelection += " AND (" + selection + ")";
                 }
@@ -192,7 +204,60 @@ public class EventsContentProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unsupported Uri: " + uri);
         }
         
-        getContext().getContentResolver().notifyChange(uri, null);
+        getContext().getContentResolver().notifyChange(uri, null, false);
         return count;
+    }
+    
+    /**
+     * Helper class for managing the application database.
+     * @author Pixmob
+     */
+    static class EventsDatabaseHelper extends SQLiteOpenHelper {
+        private static final String DATABASE_CREATE = "CREATE TABLE " + EVENTS_TABLE + " (" + _ID
+                + " TEXT PRIMARY KEY, " + DEVICE_ID + " TEXT, " + CREATED + " LONG, " + TYPE
+                + " INT, " + NUMBER + " TEXT, " + NAME + " TEXT, " + MESSAGE + " TEXT, " + STATE
+                + " INT);";
+        
+        public EventsDatabaseHelper(final Context context, final String name,
+                final CursorFactory factory, final int version) {
+            super(context, name, factory, version);
+        }
+        
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            if (DEVELOPER_MODE) {
+                Log.i(TAG, "Creating database: " + DATABASE_CREATE);
+            }
+            db.execSQL(DATABASE_CREATE);
+            
+            if (DEVELOPER_MODE) {
+                Log.i(TAG, "Inserting sample data");
+                
+                final String deviceId = "12345";
+                
+                ContentValues cv = new ContentValues();
+                cv.put(DEVICE_ID, deviceId);
+                cv.put(CREATED, System.currentTimeMillis());
+                cv.put(NUMBER, "1234567890");
+                cv.put(NAME, "John Doe");
+                cv.put(MESSAGE, "Hello world!");
+                cv.put(TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
+                db.insert(EVENTS_TABLE, "not_null", cv);
+                
+                cv = new ContentValues();
+                cv.put(DEVICE_ID, deviceId);
+                cv.put(CREATED, System.currentTimeMillis() - 100000);
+                cv.put(TYPE, Constants.MISSED_CALL_EVENT);
+                db.insert(EVENTS_TABLE, "not_null", cv);
+            }
+        }
+        
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            Log.w(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion
+                    + ", which will destroy all old data");
+            db.execSQL("DROP TABLE IF EXISTS " + EVENTS_TABLE);
+            onCreate(db);
+        }
     }
 }

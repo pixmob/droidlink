@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.services;
+package com.pixmob.droidlink;
 
 import static com.pixmob.droidlink.Constants.C2DM_MESSAGE_EXTRA;
 import static com.pixmob.droidlink.Constants.C2DM_MESSAGE_SYNC;
@@ -21,6 +21,7 @@ import static com.pixmob.droidlink.Constants.C2DM_SENDER_ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
@@ -33,16 +34,17 @@ import android.util.Log;
 import com.google.android.c2dm.C2DMBaseReceiver;
 import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.services.DeviceInitService;
 
 /**
  * Handle C2DM events.
  * @author Pixmob
  */
-public class C2DMService extends C2DMBaseReceiver {
+public class C2DMReceiver extends C2DMBaseReceiver {
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
     
-    public C2DMService() {
+    public C2DMReceiver() {
         super(C2DM_SENDER_ID);
     }
     
@@ -64,7 +66,9 @@ public class C2DMService extends C2DMBaseReceiver {
             Log.d(TAG, "C2DM registered: " + registrationId);
         }
         prefsEditor.putString(SP_KEY_DEVICE_C2DM, registrationId);
+        prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, true);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        startService(new Intent(this, DeviceInitService.class));
     }
     
     @Override

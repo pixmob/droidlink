@@ -22,6 +22,8 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
 
+import com.pixmob.droidlink.Constants;
+
 /**
  * {@link Account} utilities.
  * @author Pixmob
@@ -37,7 +39,7 @@ public final class Accounts {
      */
     public static Account[] list(Context context) {
         final AccountManager accountManager = AccountManager.get(context);
-        final Account[] accounts = accountManager.getAccountsByType("com.google");
+        final Account[] accounts = accountManager.getAccountsByType(Constants.GOOGLE_ACCOUNT);
         Arrays.sort(accounts, AccountComparator.INSTANCE);
         
         return accounts;

@@ -16,42 +16,48 @@
 package com.pixmob.droidlink.services;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DATE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DEVICE_ID;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NAME;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NUMBER;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_TYPE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.providers.EventsContract.Event.DEVICE_ID;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
 
 import java.util.Date;
 
-import android.app.IntentService;
+import android.accounts.Account;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.CallLog;
 import android.util.Log;
 
+import com.pixmob.actionservice.ActionExecutionFailedException;
+import com.pixmob.actionservice.ActionService;
 import com.pixmob.droidlink.Constants;
-import com.pixmob.droidlink.providers.EventsContentProvider;
+import com.pixmob.droidlink.providers.EventsContract;
 import com.pixmob.droidlink.util.PhoneUtils;
 
 /**
  * Find and store the last missed call to the database.
  * @author Pixmob
  */
-public class MissedCallHandlerService extends IntentService {
+public class MissedCallHandlerService extends ActionService {
     private static final String[] CALL_FIELDS = { CallLog.Calls.TYPE, CallLog.Calls.NUMBER,
             CallLog.Calls.CACHED_NAME, CallLog.Calls.DATE };
     private SharedPreferences prefs;
     
     public MissedCallHandlerService() {
-        super("MissedCallHandler");
+        super("DroidLinkMissedCallHandler");
     }
     
     @Override
@@ -61,7 +67,8 @@ public class MissedCallHandlerService extends IntentService {
     }
     
     @Override
-    protected void onHandleIntent(Intent intent) {
+    protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
+            InterruptedException {
         // Wait some time to ensure the missed call is written to the call log.
         SystemClock.sleep(1000);
         
@@ -83,8 +90,12 @@ public class MissedCallHandlerService extends IntentService {
                                 + ", time=" + new Date(callTime));
                         writeMissedCallEvent(fromNumber, fromName, callTime);
                         
-                        // Start the synchronization service.
-                        startService(new Intent(this, EventUploadService.class));
+                        // Start synchronization.
+                        final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
+                        if (accountName != null) {
+                            ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
+                                EventsContract.AUTHORITY, new Bundle());
+                        }
                     } else {
                         if (DEVELOPER_MODE) {
                             Log.w(TAG, "Missed call not found!");
@@ -98,14 +109,20 @@ public class MissedCallHandlerService extends IntentService {
     }
     
     private void writeMissedCallEvent(String number, String name, long date) {
-        final ContentValues cv = new ContentValues();
-        cv.put(KEY_DEVICE_ID, prefs.getString(SP_KEY_DEVICE_ID, null));
-        cv.put(KEY_DATE, date);
-        cv.put(KEY_FROM_NUMBER, number);
-        cv.put(KEY_FROM_NAME, name);
-        cv.put(KEY_TYPE, Constants.MISSED_CALL_EVENT);
+        final String deviceId = prefs.getString(SP_KEY_DEVICE_ID, null);
+        if (deviceId == null) {
+            Log.wtf(TAG, "No device id set");
+            return;
+        }
         
-        final Uri uri = getContentResolver().insert(EventsContentProvider.CONTENT_URI, cv);
+        final ContentValues cv = new ContentValues();
+        cv.put(DEVICE_ID, deviceId);
+        cv.put(CREATED, date);
+        cv.put(NUMBER, number);
+        cv.put(NAME, name);
+        cv.put(TYPE, Constants.MISSED_CALL_EVENT);
+        
+        final Uri uri = getContentResolver().insert(EventsContract.CONTENT_URI, cv);
         if (DEVELOPER_MODE) {
             Log.i(TAG, "New event created for missed call: " + uri);
         }

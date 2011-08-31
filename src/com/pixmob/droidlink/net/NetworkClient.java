@@ -33,6 +33,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -59,9 +60,12 @@ public class NetworkClient {
     private static final String CHARSET = "UTF-8";
     private final AppEngineClient client;
     private final String deviceId;
+    private final String account;
     
-    private NetworkClient(final AppEngineClient client, final String deviceId) {
+    private NetworkClient(final AppEngineClient client, final String accountName,
+            final String deviceId) {
         this.client = client;
+        this.account = accountName;
         this.deviceId = deviceId;
     }
     
@@ -70,8 +74,8 @@ public class NetworkClient {
             Context.MODE_PRIVATE);
         
         // An account name is required for sending authenticated requests.
-        final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
-        if (accountName == null) {
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
+        if (account == null) {
             Log.w(TAG, "No account set for this device");
             return null;
         }
@@ -84,14 +88,18 @@ public class NetworkClient {
         }
         
         final AppEngineClient gaeClient = new AppEngineClient(context, SERVER_HOST);
-        gaeClient.setAccount(accountName);
+        gaeClient.setAccount(account);
         gaeClient.setHttpUserAgent(USER_AGENT);
         
-        return new NetworkClient(gaeClient, deviceId);
+        return new NetworkClient(gaeClient, account, deviceId);
     }
     
     public String getDeviceId() {
         return deviceId;
+    }
+    
+    public String getAccount() {
+        return account;
     }
     
     public JSONObject get(String serviceUri) throws IOException, AppEngineAuthenticationException {
@@ -112,8 +120,36 @@ public class NetworkClient {
         execute(HttpMethod.DELETE, serviceUri, null);
     }
     
+    public boolean isModified(String serviceUri, long since) throws IOException,
+            AppEngineAuthenticationException {
+        final HttpHead req = new HttpHead(serviceUri);
+        return execute(req).getStatusLine().getStatusCode() != 204;
+    }
+    
     public void close() {
         client.close();
+    }
+    
+    public HttpResponse execute(HttpUriRequest request) throws IOException,
+            AppEngineAuthenticationException {
+        HttpResponse resp = null;
+        try {
+            resp = client.execute(request);
+            
+            final int statusCode = resp.getStatusLine().getStatusCode();
+            if (DEVELOPER_MODE) {
+                Log.i(TAG, "Result for request " + request.getURI().toASCIIString() + ": "
+                        + statusCode);
+            }
+            
+            return resp;
+        } catch (AppEngineAuthenticationException e) {
+            closeResources(request, resp);
+            throw e;
+        } catch (IOException e) {
+            closeResources(request, resp);
+            throw e;
+        }
     }
     
     private JSONObject execute(HttpMethod httpMethod, String serviceUri, JSONObject data)
@@ -124,64 +160,51 @@ public class NetworkClient {
         
         Log.i(TAG, "Sending request to remote server: " + requestUri);
         if (DEVELOPER_MODE) {
-            final HttpEntityEnclosingRequestBase r = (HttpEntityEnclosingRequestBase) request;
-            final HttpEntity body = r.getEntity();
-            if (body != null) {
-                final String strBody = EntityUtils.toString(body, CHARSET);
-                Log.d(TAG, "Body for request " + requestUri + ": " + strBody);
+            if (request instanceof HttpEntityEnclosingRequestBase) {
+                final HttpEntityEnclosingRequestBase r = (HttpEntityEnclosingRequestBase) request;
+                final HttpEntity body = r.getEntity();
+                if (body != null) {
+                    final String strBody = EntityUtils.toString(body, CHARSET);
+                    Log.d(TAG, "Body for request " + requestUri + ": " + strBody);
+                }
             }
         }
         
-        HttpResponse resp = null;
+        final HttpResponse resp = execute(request);
+        final int statusCode = resp.getStatusLine().getStatusCode();
+        if (isStatusNotFound(statusCode)) {
+            throw new NetworkClientException(requestUri, "Resource not found");
+        }
+        if (isStatusError(statusCode)) {
+            throw new NetworkClientException(requestUri, "Request failed on remote server");
+        }
+        if (!isStatusOK(statusCode)) {
+            throw new NetworkClientException(requestUri, "Request failed with error " + statusCode);
+        }
+        
+        final HttpEntity entity = resp.getEntity();
+        if (entity == null) {
+            if (DEVELOPER_MODE) {
+                Log.d(TAG, "No JSON result for request " + requestUri);
+            }
+            return null;
+        }
+        
+        final String strResp = EntityUtils.toString(entity);
+        if (TextUtils.isEmpty(strResp)) {
+            if (DEVELOPER_MODE) {
+                Log.d(TAG, "Empty JSON result for request " + requestUri);
+            }
+            return null;
+        }
+        
+        if (DEVELOPER_MODE) {
+            Log.d(TAG, "JSON result for request " + requestUri + ": " + strResp);
+        }
         try {
-            resp = client.execute(request);
-            
-            final int statusCode = resp.getStatusLine().getStatusCode();
-            if (DEVELOPER_MODE) {
-                Log.i(TAG, "Result for request " + requestUri + ": " + statusCode);
-            }
-            
-            if (isStatusNotFound(statusCode)) {
-                throw new NetworkClientException(requestUri, "Resource not found");
-            }
-            if (isStatusError(statusCode)) {
-                throw new NetworkClientException(requestUri, "Request failed on remote server");
-            }
-            if (!isStatusOK(statusCode)) {
-                throw new NetworkClientException(requestUri, "Request failed with error "
-                        + statusCode);
-            }
-            
-            final HttpEntity entity = resp.getEntity();
-            if (entity == null) {
-                if (DEVELOPER_MODE) {
-                    Log.d(TAG, "No JSON result for request " + requestUri);
-                }
-                return null;
-            }
-            
-            final String strResp = EntityUtils.toString(entity);
-            if (TextUtils.isEmpty(strResp)) {
-                if (DEVELOPER_MODE) {
-                    Log.d(TAG, "Empty JSON result for request " + requestUri);
-                }
-                return null;
-            }
-            
-            if (DEVELOPER_MODE) {
-                Log.d(TAG, "JSON result for request " + requestUri + ": " + strResp);
-            }
-            try {
-                return new JSONObject(strResp);
-            } catch (JSONException e) {
-                throw new NetworkClientException(requestUri, "Invalid JSON result", e);
-            }
-        } catch (AppEngineAuthenticationException e) {
-            closeResources(request, resp);
-            throw e;
-        } catch (IOException e) {
-            closeResources(request, resp);
-            throw e;
+            return new JSONObject(strResp);
+        } catch (JSONException e) {
+            throw new NetworkClientException(requestUri, "Invalid JSON result", e);
         }
     }
     

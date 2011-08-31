@@ -60,10 +60,26 @@ public final class Constants {
     public static final String SP_KEY_DEVICE_ID = "deviceId";
     public static final String SP_KEY_DEVICE_NAME = "deviceName";
     public static final String SP_KEY_DEVICE_C2DM = "deviceC2dm";
+    public static final String SP_KEY_DEVICE_SYNC_REQUIRED = "deviceSyncRequired";
+    public static final String SP_KEY_LAST_SYNC = "lastSync";
     
     public static final String C2DM_SENDER_ID = "pixmobstudio@gmail.com";
     public static final String C2DM_MESSAGE_EXTRA = "message";
     public static final String C2DM_MESSAGE_SYNC = "sync";
+    
+    public static final String ACTION_LOGIN = "com.pixmob.droidlink.login";
+    public static final String EXTRA_ACCOUNT = "account";
+    
+    /**
+     * Google account type.
+     */
+    public static final String GOOGLE_ACCOUNT = "com.google";
+    
+    /**
+     * When opening the application, if the last sync time is over this limit, a
+     * synchronization is started.
+     */
+    public static final long MAX_SYNC_AGE = 1000 * 60 * 30;
     
     private Constants() {
     }

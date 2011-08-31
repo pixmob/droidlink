@@ -37,6 +37,7 @@ abstract class AbstractNetworkService extends ActionService {
         this.serviceName = serviceName;
     }
     
+    @Override
     public void onCreate() {
         super.onCreate();
         connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -48,8 +49,7 @@ abstract class AbstractNetworkService extends ActionService {
      */
     protected boolean isNetworkAvailable() {
         if (!connectivityManager.getBackgroundDataSetting()) {
-            // The user disabled background data: this service should not be
-            // running.
+            // The user disabled background data: this service should not run.
             return false;
         }
         

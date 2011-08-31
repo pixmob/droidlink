@@ -7,6 +7,7 @@
     <supports-screens android:xlargeScreens="true" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS"></uses-permission>
     <uses-permission android:name="android.permission.USE_CREDENTIALS"></uses-permission>
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"></uses-permission>
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
     <uses-permission android:name="android.permission.READ_CONTACTS"></uses-permission>
     <uses-permission android:name="android.permission.RECEIVE_SMS"></uses-permission>
@@ -19,6 +20,7 @@
         android:protectionLevel="signature" />
     <uses-permission android:name="com.pixmob.droidlink.permission.C2D_MESSAGE" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    
 
     <application android:icon="@drawable/icon"
         android:label="@string/app_name" android:theme="@android:style/Theme.Black.NoTitleBar"
@@ -44,14 +46,34 @@
             </intent-filter>
         </receiver>
 
-        <provider android:authorities="com.pixmob.droidlink.provider"
-            android:name=".providers.EventsContentProvider" />
+        <receiver android:name="com.google.android.c2dm.C2DMBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="com.pixmob.droidlink" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
+                <category android:name="com.pixmob.droidlink" />
+            </intent-filter>
+        </receiver>
+
+        <provider android:authorities="com.pixmob.droidlink"
+            android:name=".providers.EventsContentProvider"
+            android:label="@string/app_name" android:syncable="true" />
 
         <service android:name=".services.MissedCallHandlerService"></service>
         <service android:name=".services.SmsHandlerService"></service>
         <service android:name=".services.DeviceInitService"></service>
-        <service android:name=".services.EventUploadService"></service>
-        <service android:name=".services.DeviceNameUploadService"></service>
-        <service android:name=".services.C2DMService" />
+        <service android:name=".C2DMReceiver" />
+
+        <service android:name=".services.SyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
     </application>
 </manifest>

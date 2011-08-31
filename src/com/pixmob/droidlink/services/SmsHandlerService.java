@@ -16,38 +16,44 @@
 package com.pixmob.droidlink.services;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DATE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DEVICE_ID;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NAME;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NUMBER;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_TYPE;
-import android.app.IntentService;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.providers.EventsContract.Event.DEVICE_ID;
+import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+import android.accounts.Account;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.telephony.SmsMessage;
 import android.util.Log;
 
+import com.pixmob.actionservice.ActionExecutionFailedException;
+import com.pixmob.actionservice.ActionService;
 import com.pixmob.droidlink.Constants;
-import com.pixmob.droidlink.providers.EventsContentProvider;
+import com.pixmob.droidlink.providers.EventsContract;
 import com.pixmob.droidlink.util.PhoneUtils;
 
 /**
  * Find and store the last SMS to the database.
  * @author Pixmob
  */
-public class SmsHandlerService extends IntentService {
+public class SmsHandlerService extends ActionService {
     private SharedPreferences prefs;
     
     public SmsHandlerService() {
-        super("SmsHandler");
+        super("DroidLink/SmsHandler");
     }
     
     @Override
@@ -57,7 +63,8 @@ public class SmsHandlerService extends IntentService {
     }
     
     @Override
-    protected void onHandleIntent(Intent intent) {
+    protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
+            InterruptedException {
         final Object[] pdus = (Object[]) intent.getExtras().get("pdus");
         if (pdus == null) {
             Log.w(TAG, "Got no SMS messages, since the intent is missing the extra pdus");
@@ -91,26 +98,36 @@ public class SmsHandlerService extends IntentService {
             
             Log.i(TAG, "Got SMS: number=" + fromAddress + ", name=" + fromDisplayName + ", time="
                     + message.getTimestampMillis());
-            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(),
-                message.getTimestampMillis());
+            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(), message
+                    .getTimestampMillis());
         }
         
         if (pdus.length != 0) {
-            // Start the synchronization service.
-            startService(new Intent(this, EventUploadService.class));
+            // Start synchronization.
+            final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
+            if (accountName != null) {
+                ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
+                    EventsContract.AUTHORITY, new Bundle());
+            }
         }
     }
     
     private void writeSmsEvent(String number, String name, String message, long date) {
-        final ContentValues cv = new ContentValues();
-        cv.put(KEY_DEVICE_ID, prefs.getString(SP_KEY_DEVICE_ID, null));
-        cv.put(KEY_DATE, date);
-        cv.put(KEY_FROM_NUMBER, number);
-        cv.put(KEY_FROM_NAME, name);
-        cv.put(KEY_MESSAGE, message);
-        cv.put(KEY_TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
+        final String deviceId = prefs.getString(SP_KEY_DEVICE_ID, null);
+        if (deviceId == null) {
+            Log.wtf(TAG, "No device id set");
+            return;
+        }
         
-        final Uri uri = getContentResolver().insert(EventsContentProvider.CONTENT_URI, cv);
+        final ContentValues cv = new ContentValues();
+        cv.put(DEVICE_ID, deviceId);
+        cv.put(CREATED, date);
+        cv.put(NUMBER, number);
+        cv.put(NAME, name);
+        cv.put(MESSAGE, message);
+        cv.put(TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
+        
+        final Uri uri = getContentResolver().insert(EventsContract.CONTENT_URI, cv);
         if (DEVELOPER_MODE) {
             Log.i(TAG, "New event created for SMS: " + uri);
         }

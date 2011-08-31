@@ -15,14 +15,6 @@
  */
 package com.pixmob.droidlink.ui;
 
-import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
-import static com.pixmob.droidlink.Constants.TAG;
-
-import java.io.IOException;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.accounts.Account;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -31,10 +23,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,12 +32,7 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
 
-import com.pixmob.appengine.client.AppEngineAuthenticationException;
-import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.R;
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
-import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -61,14 +45,9 @@ public class SelectAccountActivity extends ListActivity {
     private static final int AUTH_PROGRESS_DIALOG = 3;
     private static final int AUTH_ERROR_DIALOG = 4;
     private String accountName;
-    private SharedPreferences prefs;
-    private SharedPreferences.Editor prefsEditor;
-    private CheckAccountTask checkAccountTask;
     private State state;
     
     public void onSelectAccount(View v) {
-        prefsEditor.putString(Constants.SP_KEY_ACCOUNT, accountName);
-        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         checkAccount();
     }
     
@@ -95,9 +74,9 @@ public class SelectAccountActivity extends ListActivity {
             d.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialog) {
-                    if (checkAccountTask != null) {
-                        checkAccountTask.cancel(true);
-                        checkAccountTask = null;
+                    if (state.loginTask != null) {
+                        state.loginTask.cancel(true);
+                        state.loginTask = null;
                     }
                 }
             });
@@ -109,8 +88,6 @@ public class SelectAccountActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        prefs = getSharedPreferences(Constants.SHARED_PREFERENCES_FILE, MODE_PRIVATE);
-        prefsEditor = prefs.edit();
         
         if (getResources().getBoolean(R.bool.fullscreen)) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -195,9 +172,8 @@ public class SelectAccountActivity extends ListActivity {
     }
     
     private void checkAccount() {
-        final String deviceName = prefs.getString(SP_KEY_DEVICE_NAME, null);
-        state.checkAccountTask = new CheckAccountTask(state);
-        state.checkAccountTask.execute(deviceName);
+        state.loginTask = new InternalLoginTask(state);
+        state.loginTask.execute(accountName);
     }
     
     private class AccountAdapter extends ArrayAdapter<Account> {
@@ -229,7 +205,7 @@ public class SelectAccountActivity extends ListActivity {
     
     private static class State {
         public SelectAccountActivity activity;
-        public CheckAccountTask checkAccountTask;
+        public InternalLoginTask loginTask;
     }
     
     /**
@@ -237,80 +213,46 @@ public class SelectAccountActivity extends ListActivity {
      * asking the user for granting its permission to use its account.
      * @author Pixmob
      */
-    private static class CheckAccountTask extends AsyncTask<String, Void, Integer> {
-        private static final int AUTH_OK = 0;
-        private static final int AUTH_FAIL = 1;
-        private static final int AUTH_PENDING = 2;
+    private static class InternalLoginTask extends LoginTask {
         private final State state;
-        private Intent authPendingIntent;
         
-        public CheckAccountTask(final State state) {
+        public InternalLoginTask(final State state) {
+            super(state.activity);
             this.state = state;
         }
         
         @Override
-        protected Integer doInBackground(String... params) {
-            final SelectAccountActivity a = state.activity;
-            if (a == null) {
-                return AUTH_FAIL;
-            }
-            
-            final String deviceName = params[0];
-            final JSONObject jsonData = new JSONObject();
-            try {
-                jsonData.put("name", deviceName);
-            } catch (JSONException ignore) {
-            }
-            
-            final NetworkClient client = NetworkClient.newInstance(a);
-            int authResult = AUTH_FAIL;
-            try {
-                client.put("/device/" + client.getDeviceId(), jsonData);
-                authResult = AUTH_OK;
-            } catch (AppEngineAuthenticationException e) {
-                if (e.isAuthenticationPending()) {
-                    authPendingIntent = e.getPendingAuthenticationPermissionActivity();
-                    authResult = AUTH_PENDING;
-                }
-                Log.w(TAG, "Failed to authenticate account", e);
-            } catch (IOException e) {
-                Log.i(TAG, "Failed to check account availability", e);
-            } finally {
-                client.close();
-            }
-            
-            return authResult;
-        }
-        
-        @Override
         protected void onPreExecute() {
-            if (state.activity != null) {
-                state.activity.showDialog(AUTH_PROGRESS_DIALOG);
+            final SelectAccountActivity a = state.activity;
+            if (a != null) {
+                a.showDialog(SelectAccountActivity.AUTH_PROGRESS_DIALOG);
             }
         }
         
         @Override
-        protected void onPostExecute(Integer result) {
+        protected void onAuthenticationSuccess() {
             final SelectAccountActivity a = state.activity;
-            
-            switch (result) {
-                case AUTH_PENDING:
-                    if (a != null) {
-                        dismissDialog(a, AUTH_PROGRESS_DIALOG);
-                        a.startActivityForResult(authPendingIntent, GRANT_AUTH_PERMISSION_REQUEST);
-                    }
-                    break;
-                case AUTH_FAIL:
-                    if (a != null) {
-                        dismissDialog(a, AUTH_PROGRESS_DIALOG);
-                        a.showDialog(AUTH_ERROR_DIALOG);
-                    }
-                    break;
-                case AUTH_OK:
-                    if (a != null) {
-                        a.setResult(RESULT_OK);
-                        a.finish();
-                    }
+            if (a != null) {
+                a.setResult(RESULT_OK);
+                a.finish();
+            }
+        }
+        
+        @Override
+        protected void onAuthenticationError() {
+            final SelectAccountActivity a = state.activity;
+            if (a != null) {
+                dismissDialog(a, AUTH_PROGRESS_DIALOG);
+                a.showDialog(AUTH_ERROR_DIALOG);
+            }
+        }
+        
+        @Override
+        protected void onAuthenticationPending(Intent authPendingIntent) {
+            final SelectAccountActivity a = state.activity;
+            if (a != null) {
+                dismissDialog(a, AUTH_PROGRESS_DIALOG);
+                a.startActivityForResult(authPendingIntent, GRANT_AUTH_PERMISSION_REQUEST);
             }
         }
     }

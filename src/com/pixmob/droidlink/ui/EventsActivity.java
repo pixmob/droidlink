@@ -15,14 +15,14 @@
  */
 package com.pixmob.droidlink.ui;
 
+import static android.provider.BaseColumns._ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_DATE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NAME;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_FROM_NUMBER;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_ID;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContentProvider.KEY_TYPE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
 import android.app.ListActivity;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -39,15 +39,14 @@ import android.widget.ListView;
 
 import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.R;
-import com.pixmob.droidlink.providers.EventsContentProvider;
+import com.pixmob.droidlink.providers.EventsContract;
 
 /**
  * Display phone events from every user devices.
  * @author Pixmob
  */
 public class EventsActivity extends ListActivity {
-    private static final String[] EVENT_COLUMNS = { KEY_ID, KEY_DATE, KEY_FROM_NUMBER,
-            KEY_FROM_NAME, KEY_TYPE, KEY_MESSAGE };
+    private static final String[] EVENT_COLUMNS = { _ID, CREATED, NUMBER, NAME, TYPE, MESSAGE };
     private static final int SELECT_ACCOUNT_REQUEST = 1;
     private SharedPreferences prefs;
     
@@ -69,8 +68,7 @@ public class EventsActivity extends ListActivity {
         
         // The activity is managing its own data: the list is automatically
         // refreshed when the source is updated.
-        final Cursor c = managedQuery(EventsContentProvider.CONTENT_URI, EVENT_COLUMNS, null, null,
-            null);
+        final Cursor c = managedQuery(EventsContract.CONTENT_URI, EVENT_COLUMNS, null, null, null);
         setListAdapter(new EventCursorAdapter(this, c));
         
         findViewById(R.id.robot).setVisibility(
@@ -115,7 +113,7 @@ public class EventsActivity extends ListActivity {
         super.onListItemClick(l, v, position, id);
         
         final Long itemId = (Long) v.getTag(EventCursorAdapter.TAG_ID);
-        final Uri itemUri = ContentUris.withAppendedId(EventsContentProvider.CONTENT_URI, itemId);
+        final Uri itemUri = ContentUris.withAppendedId(EventsContract.CONTENT_URI, itemId);
         
         if (DEVELOPER_MODE) {
             Log.i(TAG, "Opening event details for " + itemUri);
