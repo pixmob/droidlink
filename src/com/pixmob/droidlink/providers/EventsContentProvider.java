@@ -39,15 +39,13 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
-
-import com.pixmob.droidlink.Constants;
 
 /**
  * Content provider for the events database.
@@ -241,13 +239,13 @@ public class EventsContentProvider extends ContentProvider {
                 cv.put(NUMBER, "1234567890");
                 cv.put(NAME, "John Doe");
                 cv.put(MESSAGE, "Hello world!");
-                cv.put(TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
+                cv.put(TYPE, EventsContract.RECEIVED_SMS_TYPE);
                 db.insert(EVENTS_TABLE, "not_null", cv);
                 
                 cv = new ContentValues();
                 cv.put(DEVICE_ID, deviceId);
                 cv.put(CREATED, System.currentTimeMillis() - 100000);
-                cv.put(TYPE, Constants.MISSED_CALL_EVENT);
+                cv.put(TYPE, EventsContract.MISSED_CALL_TYPE);
                 db.insert(EVENTS_TABLE, "not_null", cv);
             }
         }

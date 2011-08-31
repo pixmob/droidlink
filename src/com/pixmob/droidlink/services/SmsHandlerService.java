@@ -41,7 +41,6 @@ import android.util.Log;
 
 import com.pixmob.actionservice.ActionExecutionFailedException;
 import com.pixmob.actionservice.ActionService;
-import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.providers.EventsContract;
 import com.pixmob.droidlink.util.PhoneUtils;
 
@@ -98,8 +97,8 @@ public class SmsHandlerService extends ActionService {
             
             Log.i(TAG, "Got SMS: number=" + fromAddress + ", name=" + fromDisplayName + ", time="
                     + message.getTimestampMillis());
-            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(), message
-                    .getTimestampMillis());
+            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(),
+                message.getTimestampMillis());
         }
         
         if (pdus.length != 0) {
@@ -125,7 +124,7 @@ public class SmsHandlerService extends ActionService {
         cv.put(NUMBER, number);
         cv.put(NAME, name);
         cv.put(MESSAGE, message);
-        cv.put(TYPE, Constants.RECEIVED_SMS_EVENT_TYPE);
+        cv.put(TYPE, EventsContract.RECEIVED_SMS_TYPE);
         
         final Uri uri = getContentResolver().insert(EventsContract.CONTENT_URI, cv);
         if (DEVELOPER_MODE) {

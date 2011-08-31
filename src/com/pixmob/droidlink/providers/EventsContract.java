@@ -34,6 +34,15 @@ public class EventsContract {
     public static final int DELETED_STATE = 3;
     
     /**
+     * Event type for a missed call.
+     */
+    public static final int MISSED_CALL_TYPE = 0;
+    /**
+     * Event type for a SMS.
+     */
+    public static final int RECEIVED_SMS_TYPE = 1;
+    
+    /**
      * Content type and column constants for the Events table.
      * @author Pixmob
      */

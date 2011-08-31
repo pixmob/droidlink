@@ -36,14 +36,14 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.providers.EventsContract;
 
 /**
  * Data source for device events.
@@ -54,8 +54,8 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
     private static final int TAG_NUMBER = R.id.event_number;
     private static final Map<Integer, Integer> EVENT_ICONS = new HashMap<Integer, Integer>(2);
     static {
-        EVENT_ICONS.put(Constants.MISSED_CALL_EVENT, R.drawable.ic_missed_call);
-        EVENT_ICONS.put(Constants.RECEIVED_SMS_EVENT_TYPE, R.drawable.ic_sms_mms);
+        EVENT_ICONS.put(EventsContract.MISSED_CALL_TYPE, R.drawable.ic_missed_call);
+        EVENT_ICONS.put(EventsContract.RECEIVED_SMS_TYPE, R.drawable.ic_sms_mms);
     }
     private static Boolean deviceCanCall;
     private final boolean showMessage;
@@ -88,8 +88,9 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         final int type = cursor.getInt(cursor.getColumnIndex(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
-                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
+            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE);
         
         final String message = cursor.getString(cursor.getColumnIndex(MESSAGE));
         

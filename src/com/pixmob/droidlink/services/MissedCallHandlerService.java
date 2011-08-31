@@ -43,7 +43,6 @@ import android.util.Log;
 
 import com.pixmob.actionservice.ActionExecutionFailedException;
 import com.pixmob.actionservice.ActionService;
-import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.providers.EventsContract;
 import com.pixmob.droidlink.util.PhoneUtils;
 
@@ -120,7 +119,7 @@ public class MissedCallHandlerService extends ActionService {
         cv.put(CREATED, date);
         cv.put(NUMBER, number);
         cv.put(NAME, name);
-        cv.put(TYPE, Constants.MISSED_CALL_EVENT);
+        cv.put(TYPE, EventsContract.MISSED_CALL_TYPE);
         
         final Uri uri = getContentResolver().insert(EventsContract.CONTENT_URI, cv);
         if (DEVELOPER_MODE) {

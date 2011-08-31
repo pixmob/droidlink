@@ -34,15 +34,6 @@ public final class Constants {
     public static final int REMOTE_API_VERSION = 1;
     
     /**
-     * Event type for a missed call.
-     */
-    public static final int MISSED_CALL_EVENT = 0;
-    /**
-     * Event type for a SMS.
-     */
-    public static final int RECEIVED_SMS_EVENT_TYPE = 1;
-    
-    /**
      * Set to <code>true</code> to enable development mode. When a release is
      * being built, make sure this flag is set to <code>false</code>.
      */
