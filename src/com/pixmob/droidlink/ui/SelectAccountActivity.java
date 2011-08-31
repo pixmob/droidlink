@@ -33,6 +33,7 @@ import android.widget.CheckedTextView;
 import android.widget.ListView;
 
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.services.DeviceInitService;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -54,18 +55,18 @@ public class SelectAccountActivity extends ListActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE_DIALOG == id) {
-            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        setResult(RESULT_CANCELED);
-                        finish();
-                    }
-                }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
+            return new AlertDialog.Builder(this)
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            setResult(RESULT_CANCELED);
+                            finish();
+                        }
+                    }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
         }
         if (AUTH_ERROR_DIALOG == id) {
-            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null).setTitle(
-                R.string.error).setMessage(R.string.auth_error).create();
+            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null)
+                    .setTitle(R.string.error).setMessage(R.string.auth_error).create();
         }
         if (AUTH_PROGRESS_DIALOG == id) {
             final ProgressDialog d = new ProgressDialog(this);
@@ -235,6 +236,9 @@ public class SelectAccountActivity extends ListActivity {
             if (a != null) {
                 a.setResult(RESULT_OK);
                 a.finish();
+                
+                // Make sure a device is initialized for this user.
+                a.startService(new Intent(a, DeviceInitService.class));
             }
         }
         
