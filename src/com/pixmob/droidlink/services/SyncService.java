@@ -22,7 +22,8 @@ import android.os.IBinder;
 import com.pixmob.droidlink.sync.SyncAdapter;
 
 /**
- * Synchronize events.
+ * Synchronize events. This service is called by the Android system when a
+ * synchronization is required. This class delegates to {@link SyncAdapter}.
  * @author Pixmob
  */
 public class SyncService extends Service {

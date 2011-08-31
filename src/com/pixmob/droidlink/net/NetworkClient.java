@@ -40,6 +40,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -103,17 +104,22 @@ public class NetworkClient {
     }
     
     public JSONObject get(String serviceUri) throws IOException, AppEngineAuthenticationException {
-        return execute(HttpMethod.GET, serviceUri, null);
+        return (JSONObject) execute(HttpMethod.GET, serviceUri, null);
+    }
+    
+    public JSONArray getAsArray(String serviceUri) throws IOException,
+            AppEngineAuthenticationException {
+        return (JSONArray) execute(HttpMethod.GET, serviceUri, null);
     }
     
     public JSONObject put(String serviceUri, JSONObject data) throws IOException,
             AppEngineAuthenticationException {
-        return execute(HttpMethod.PUT, serviceUri, data);
+        return (JSONObject) execute(HttpMethod.PUT, serviceUri, data);
     }
     
     public JSONObject post(String serviceUri, JSONObject data) throws IOException,
             AppEngineAuthenticationException {
-        return execute(HttpMethod.POST, serviceUri, data);
+        return (JSONObject) execute(HttpMethod.POST, serviceUri, data);
     }
     
     public void delete(String serviceUri) throws IOException, AppEngineAuthenticationException {
@@ -152,14 +158,14 @@ public class NetworkClient {
         }
     }
     
-    private JSONObject execute(HttpMethod httpMethod, String serviceUri, JSONObject data)
+    private Object execute(HttpMethod httpMethod, String serviceUri, JSONObject data)
             throws IOException, AppEngineAuthenticationException {
         final String requestUri = createServiceUri(serviceUri);
         final HttpUriRequest request = httpMethod.createRequest(requestUri, data);
         prepareJsonRequest(request);
         
-        Log.i(TAG, "Sending request to remote server: " + requestUri);
         if (DEVELOPER_MODE) {
+            Log.i(TAG, "Sending request to remote server: " + requestUri);
             if (request instanceof HttpEntityEnclosingRequestBase) {
                 final HttpEntityEnclosingRequestBase r = (HttpEntityEnclosingRequestBase) request;
                 final HttpEntity body = r.getEntity();
@@ -202,6 +208,10 @@ public class NetworkClient {
             Log.d(TAG, "JSON result for request " + requestUri + ": " + strResp);
         }
         try {
+            if (strResp.startsWith("[")) {
+                // This is a JSON array.
+                return new JSONArray(strResp);
+            }
             return new JSONObject(strResp);
         } catch (JSONException e) {
             throw new NetworkClientException(requestUri, "Invalid JSON result", e);

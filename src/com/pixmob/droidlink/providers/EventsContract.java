@@ -31,7 +31,6 @@ public class EventsContract {
     public static final int PENDING_UPLOAD_STATE = 0;
     public static final int UPLOADED_STATE = 1;
     public static final int PENDING_DELETE_STATE = 2;
-    public static final int DELETED_STATE = 3;
     
     /**
      * Event type for a missed call.

@@ -22,6 +22,7 @@ import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_LAST_SYNC;
 import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.providers.EventsContract.Event.DEVICE_ID;
 import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -61,6 +63,7 @@ import com.pixmob.droidlink.providers.EventsContract;
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String[] PROJECTION = { _ID, TYPE, CREATED, NUMBER, NAME, MESSAGE, STATE };
+    private static final String[] PROJECTION_ID = { _ID };
     
     public SyncAdapter(final Context context, final boolean autoInitialize) {
         super(context, autoInitialize);
@@ -136,7 +139,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         event.put("name", c.getString(nameIdx));
                         event.put("message", c.getString(messageIdx));
                     } catch (JSONException e) {
-                        Log.w(TAG, "Invalid event " + eventId + ": cannot upload", e);
+                        Log.w(TAG, "Invalid event " + eventId + ": cannot sync", e);
                         syncResult.stats.numSkippedEntries++;
                         continue;
                     }
@@ -151,7 +154,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             syncResult.stats.numIoExceptions++;
             return;
         } finally {
-            c.close();
+            if (c != null) {
+                c.close();
+                c = null;
+            }
         }
         
         final int numEventsToUpload = eventsToUpload.size();
@@ -165,47 +171,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         final String eventSelection = _ID + "=?";
         final String[] eventSelectionArgs = new String[1];
         
-        // Send events to the remote server.
-        for (final Map.Entry<String, JSONObject> entry : eventsToUpload.entrySet()) {
-            final String eventId = entry.getKey();
-            final String eventUUID = client.getDeviceId() + "/" + eventId;
-            
-            if (DEVELOPER_MODE) {
-                Log.d(TAG, "Uploading event: " + eventUUID);
-            }
-            
-            final JSONObject event = entry.getValue();
-            try {
-                client.put("/device/" + eventUUID, event);
-                
-                if (DEVELOPER_MODE) {
-                    Log.d(TAG, "Updating event state to UPLOADED: " + eventUUID);
-                }
-                values.clear();
-                values.put(STATE, EventsContract.UPLOADED_STATE);
-                eventSelectionArgs[0] = eventId;
-                provider.update(EventsContract.CONTENT_URI, values, eventSelection,
-                    eventSelectionArgs);
-                syncResult.stats.numUpdates++;
-                
-                Log.i(TAG, "Event upload successful: " + eventUUID);
-            } catch (RemoteException e) {
-                Log.w(TAG, "Failed to update event " + eventUUID + " to UPLOADED", e);
-                syncResult.stats.numIoExceptions++;
-            } catch (IOException e) {
-                Log.w(TAG, "Event upload error: cannot sync", e);
-                syncResult.stats.numIoExceptions++;
-                return;
-            } catch (AppEngineAuthenticationException e) {
-                Log.w(TAG, "Authentication error: cannot sync", e);
-                syncResult.stats.numAuthExceptions++;
-                return;
-            }
-        }
-        
-        for (int i = 0; i < numEventsToUpload; ++i) {
-        }
-        
         if (eventsToDelete.isEmpty()) {
             Log.i(TAG, "No events to delete");
         } else {
@@ -216,34 +181,191 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         for (final String eventId : eventsToDelete) {
             final String eventUUID = client.getDeviceId() + "/" + eventId;
             if (DEVELOPER_MODE) {
-                Log.d(TAG, "Deleting event: " + eventUUID);
+                Log.d(TAG, "Deleting event: " + eventId);
             }
             
             try {
                 client.delete("/device/" + eventUUID);
                 
                 if (DEVELOPER_MODE) {
-                    Log.d(TAG, "Deleting event in local database: " + eventUUID);
+                    Log.d(TAG, "Deleting event in local database: " + eventId);
                 }
                 eventSelectionArgs[0] = eventId;
                 provider.delete(EventsContract.CONTENT_URI, eventSelection, eventSelectionArgs);
                 syncResult.stats.numDeletes++;
                 
-                Log.i(TAG, "Event deletion successful: " + eventUUID);
+                Log.i(TAG, "Event deletion successful: " + eventId);
             } catch (RemoteException e) {
-                Log.w(TAG, "Failed to delete event " + eventUUID + " in local database", e);
+                Log.w(TAG, "Failed to delete event " + eventId + " from local database", e);
                 syncResult.stats.numIoExceptions++;
             } catch (IOException e) {
                 Log.w(TAG, "Event deletion error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
             } catch (AppEngineAuthenticationException e) {
-                Log.w(TAG, "Authentication error: cannot sync", e);
+                Log.e(TAG, "Authentication error: cannot sync", e);
                 syncResult.stats.numAuthExceptions++;
                 return;
             }
         }
         
-        // TODO Get event list from the remove server.
+        // Get all events from the remote server.
+        final JSONArray events;
+        if (DEVELOPER_MODE) {
+            Log.d(TAG, "Fetching events from the server");
+        }
+        try {
+            events = client.getAsArray("/device/" + client.getDeviceId());
+        } catch (IOException e) {
+            Log.e(TAG, "Event listing error: cannot sync", e);
+            syncResult.stats.numIoExceptions++;
+            return;
+        } catch (AppEngineAuthenticationException e) {
+            Log.e(TAG, "Authentication error: cannot sync", e);
+            syncResult.stats.numAuthExceptions++;
+            return;
+        }
+        
+        final int eventsLen = events != null ? events.length() : 0;
+        if (eventsLen == 0) {
+            Log.i(TAG, "No events from the server");
+        } else {
+            Log.i(TAG, "Found " + eventsLen + " event(s) from the server");
+        }
+        
+        // Build a collection with local event identifiers.
+        // This collection will be used to identify which events have been
+        // deleted on the remote server.
+        final Set<String> localEventIds;
+        try {
+            c = provider.query(EventsContract.CONTENT_URI, PROJECTION_ID, STATE + "=?",
+                new String[] { String.valueOf(EventsContract.UPLOADED_STATE) }, null);
+            localEventIds = new HashSet<String>(c.getCount());
+            
+            final int idIdx = c.getColumnIndex(_ID);
+            while (c.moveToNext()) {
+                final String eventId = c.getString(idIdx);
+                localEventIds.add(eventId);
+            }
+        } catch (RemoteException e) {
+            Log.e(TAG, "Failed to get events from local database", e);
+            syncResult.stats.numIoExceptions++;
+            return;
+        } finally {
+            if (c != null) {
+                c.close();
+                c = null;
+            }
+        }
+        
+        // Reconcile remote events with local events.
+        for (int i = 0; i < eventsLen; ++i) {
+            String eventId = null;
+            try {
+                final JSONObject event = events.getJSONObject(i);
+                eventId = event.getString("id");
+                
+                // Check if this event exists in the local database.
+                if (localEventIds.contains(eventId)) {
+                    // Found the event: update it.
+                    values.clear();
+                    values.put(NUMBER, event.getString("number"));
+                    values.put(NAME, event.getString("name"));
+                    values.put(MESSAGE, event.getString("message"));
+                    eventSelectionArgs[0] = eventId;
+                    
+                    if (DEVELOPER_MODE) {
+                        Log.d(TAG, "Updating event in local database: " + eventId);
+                    }
+                    provider.update(EventsContract.CONTENT_URI, values, eventSelection,
+                        eventSelectionArgs);
+                    syncResult.stats.numUpdates++;
+                } else {
+                    // The event was not found: insert it.
+                    values.clear();
+                    values.put(_ID, eventId);
+                    values.put(DEVICE_ID, client.getDeviceId());
+                    values.put(CREATED, event.getLong("created"));
+                    values.put(TYPE, event.getInt("type"));
+                    values.put(NUMBER, event.getString("number"));
+                    values.put(NAME, event.getString("name"));
+                    values.put(MESSAGE, event.getString("message"));
+                    values.put(STATE, EventsContract.UPLOADED_STATE);
+                    
+                    if (DEVELOPER_MODE) {
+                        Log.d(TAG, "Adding event to local database: " + eventId);
+                    }
+                    provider.insert(EventsContract.CONTENT_URI, values);
+                    syncResult.stats.numInserts++;
+                }
+                
+                // This event now exists in the local database:
+                // remove its identifier from this collection as we don't
+                // want to delete it.
+                localEventIds.remove(eventId);
+            } catch (JSONException e) {
+                Log.w(TAG, "Invalid event at index " + i + ": cannot sync", e);
+                syncResult.stats.numSkippedEntries++;
+                continue;
+            } catch (RemoteException e) {
+                Log.w(TAG, "Failed to get event " + eventId + " from local database", e);
+                syncResult.stats.numIoExceptions++;
+            }
+        }
+        
+        // The remaining event identifiers was removed on the remote server:
+        // there are still present in the local database. These events are
+        // now being deleted.
+        for (final String eventId : localEventIds) {
+            if (DEVELOPER_MODE) {
+                Log.d(TAG, "Deleting event in local database: " + eventId);
+            }
+            eventSelectionArgs[0] = eventId;
+            try {
+                provider.delete(EventsContract.CONTENT_URI, eventSelection, eventSelectionArgs);
+                syncResult.stats.numDeletes++;
+            } catch (RemoteException e) {
+                Log.w(TAG, "Failed to delete event " + eventId + " from local database", e);
+                syncResult.stats.numIoExceptions++;
+            }
+        }
+        
+        // Send events to the remote server.
+        for (final Map.Entry<String, JSONObject> entry : eventsToUpload.entrySet()) {
+            final String eventId = entry.getKey();
+            final String eventUUID = client.getDeviceId() + "/" + eventId;
+            
+            if (DEVELOPER_MODE) {
+                Log.d(TAG, "Uploading event: " + eventId);
+            }
+            
+            final JSONObject event = entry.getValue();
+            try {
+                client.put("/device/" + eventUUID, event);
+                
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "Updating event state to UPLOADED: " + eventId);
+                }
+                values.clear();
+                values.put(STATE, EventsContract.UPLOADED_STATE);
+                eventSelectionArgs[0] = eventId;
+                provider.update(EventsContract.CONTENT_URI, values, eventSelection,
+                    eventSelectionArgs);
+                syncResult.stats.numUpdates++;
+                
+                Log.i(TAG, "Event upload successful: " + eventId);
+            } catch (RemoteException e) {
+                Log.w(TAG, "Failed to update event " + eventId + " to UPLOADED", e);
+                syncResult.stats.numIoExceptions++;
+            } catch (IOException e) {
+                Log.e(TAG, "Event upload error: cannot sync", e);
+                syncResult.stats.numIoExceptions++;
+                return;
+            } catch (AppEngineAuthenticationException e) {
+                Log.e(TAG, "Authentication error: cannot sync", e);
+                syncResult.stats.numAuthExceptions++;
+                return;
+            }
+        }
         
         // Store sync time.
         final SharedPreferences.Editor prefsEditor = prefs.edit();
