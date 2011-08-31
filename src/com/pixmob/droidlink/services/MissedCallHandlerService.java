@@ -56,7 +56,7 @@ public class MissedCallHandlerService extends ActionService {
     private SharedPreferences prefs;
     
     public MissedCallHandlerService() {
-        super("DroidLinkMissedCallHandler");
+        super("DroidLink/MissedCallHandler");
     }
     
     @Override
