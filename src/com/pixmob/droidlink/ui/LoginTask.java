@@ -16,7 +16,6 @@
 package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
-import static com.pixmob.droidlink.Constants.SERVER_HOST;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
@@ -24,7 +23,8 @@ import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
 
-import org.apache.http.client.methods.HttpGet;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.content.ContentResolver;
@@ -80,8 +80,12 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
         
         int authResult = AUTH_FAIL;
         if (client != null) {
+            final JSONObject data = new JSONObject();
+            
             try {
-                client.execute(new HttpGet("https://" + SERVER_HOST));
+                data.put("name", "");
+                data.put("c2dm", "");
+                client.put("/device/" + client.getDeviceId(), data);
                 authResult = AUTH_OK;
             } catch (AppEngineAuthenticationException e) {
                 if (e.isAuthenticationPending()) {
@@ -90,7 +94,9 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
                 }
                 Log.w(TAG, "Failed to authenticate account", e);
             } catch (IOException e) {
-                Log.i(TAG, "Failed to check account availability", e);
+                Log.w(TAG, "Failed to check account availability", e);
+            } catch (JSONException e) {
+                Log.w(TAG, "JSON error", e);
             } finally {
                 client.close();
             }
