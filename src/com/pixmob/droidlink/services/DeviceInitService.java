@@ -123,32 +123,37 @@ public class DeviceInitService extends AbstractNetworkService {
                     getString(R.string.device_setup_running), openMainActivity);
                 startForeground(R.string.device_setup_running, n);
                 
-                final NetworkClient client = NetworkClient.newInstance(this);
-                if (client != null) {
-                    try {
-                        final JSONObject data = new JSONObject();
-                        data.put("name", deviceName);
-                        data.put("c2dm", deviceC2dm);
-                        
-                        if (DEVELOPER_MODE) {
-                            Log.i(TAG, "Initializing device " + client.getDeviceId() + ": name="
-                                    + deviceName + ", c2dm=" + deviceC2dm);
+                try {
+                    final NetworkClient client = NetworkClient.newInstance(this);
+                    if (client != null) {
+                        try {
+                            final JSONObject data = new JSONObject();
+                            data.put("name", deviceName);
+                            data.put("c2dm", deviceC2dm);
+                            
+                            if (DEVELOPER_MODE) {
+                                Log.i(TAG, "Initializing device " + client.getDeviceId()
+                                        + ": name=" + deviceName + ", c2dm=" + deviceC2dm);
+                            }
+                            client.put("/device/" + client.getDeviceId(), data);
+                            
+                            prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
+                            Features.getFeature(SharedPreferencesSaverFeature.class).save(
+                                prefsEditor);
+                        } catch (JSONException e) {
+                            throw new ActionExecutionFailedException("JSON error", e);
+                        } catch (IOException e) {
+                            throw new ActionExecutionFailedException(
+                                    "I/O error: cannot init device", e);
+                        } catch (AppEngineAuthenticationException e) {
+                            throw new ActionExecutionFailedException(
+                                    "Authentication error: cannot init device", e);
+                        } finally {
+                            client.close();
                         }
-                        client.put("/device/" + client.getDeviceId(), data);
-                        
-                        prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
-                        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
-                    } catch (JSONException e) {
-                        throw new ActionExecutionFailedException("JSON error", e);
-                    } catch (IOException e) {
-                        throw new ActionExecutionFailedException("I/O error: cannot init device", e);
-                    } catch (AppEngineAuthenticationException e) {
-                        throw new ActionExecutionFailedException(
-                                "Authentication error: cannot init device", e);
-                    } finally {
-                        stopForeground(true);
-                        client.close();
                     }
+                } finally {
+                    stopForeground(true);
                 }
             }
         }
