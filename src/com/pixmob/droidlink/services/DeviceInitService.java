@@ -117,7 +117,7 @@ public class DeviceInitService extends AbstractNetworkService {
             final String deviceC2dm = prefs.getString(SP_KEY_DEVICE_C2DM, null);
             
             if (deviceName != null || deviceC2dm != null) {
-                final Notification n = new Notification(android.R.drawable.stat_sys_upload,
+                final Notification n = new Notification(android.R.drawable.stat_notify_sync,
                         getString(R.string.device_setup_running), System.currentTimeMillis());
                 n.setLatestEventInfo(this, getString(R.string.app_name),
                     getString(R.string.device_setup_running), openMainActivity);
