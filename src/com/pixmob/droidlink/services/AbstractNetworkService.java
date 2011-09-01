@@ -65,6 +65,7 @@ abstract class AbstractNetworkService extends ActionService {
     @Override
     protected final void onHandleAction(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
+        onPreHandleActionInternal(intent);
         if (!isNetworkAvailable()) {
             Log.w(TAG, "Network is not reachable: cannot run service " + serviceName);
             return;
@@ -76,5 +77,15 @@ abstract class AbstractNetworkService extends ActionService {
      * Handle the intent while the network is available.
      */
     protected abstract void onHandleActionInternal(Intent intent)
+            throws ActionExecutionFailedException, InterruptedException;
+    
+    /**
+     * Handle the intent before {@link #onHandleActionInternal(Intent)}, without
+     * checking for network connectivity.
+     * @param intent
+     * @throws ActionExecutionFailedException
+     * @throws InterruptedException
+     */
+    protected abstract void onPreHandleActionInternal(Intent intent)
             throws ActionExecutionFailedException, InterruptedException;
 }

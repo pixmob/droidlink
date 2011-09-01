@@ -71,10 +71,18 @@ public class DeviceInitService extends AbstractNetworkService {
     }
     
     @Override
+    protected void onPreHandleActionInternal(Intent intent) throws ActionExecutionFailedException,
+            InterruptedException {
+        // No network is required for generating a device identifier.
+        generateId();
+    }
+    
+    @Override
     protected void onHandleActionInternal(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
+        // Network connectivity is required for registering to C2DM and
+        // uploading device configuration.
         try {
-            generateId();
             registerC2DM();
             uploadDeviceConf();
         } catch (ActionExecutionFailedException e) {
@@ -110,10 +118,10 @@ public class DeviceInitService extends AbstractNetworkService {
             
             if (deviceName != null || deviceC2dm != null) {
                 final Notification n = new Notification(android.R.drawable.stat_sys_upload,
-                        getString(R.string.device_init_running), System.currentTimeMillis());
+                        getString(R.string.device_setup_running), System.currentTimeMillis());
                 n.setLatestEventInfo(this, getString(R.string.app_name),
-                    getString(R.string.device_init_running), openMainActivity);
-                startForeground(R.string.device_init_running, n);
+                    getString(R.string.device_setup_running), openMainActivity);
+                startForeground(R.string.device_setup_running, n);
                 
                 final NetworkClient client = NetworkClient.newInstance(this);
                 if (client != null) {
@@ -148,10 +156,10 @@ public class DeviceInitService extends AbstractNetworkService {
     
     private void showErrorNotification() {
         final Notification nError = new Notification(android.R.drawable.stat_sys_warning,
-                getString(R.string.device_init_error), System.currentTimeMillis());
+                getString(R.string.device_setup_error), System.currentTimeMillis());
         nError.setLatestEventInfo(this, getString(R.string.app_name),
-            getString(R.string.device_init_error), openMainActivity);
+            getString(R.string.device_setup_error), openMainActivity);
         final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        nm.notify(R.string.device_init_error, nError);
+        nm.notify(R.string.device_setup_error, nError);
     }
 }

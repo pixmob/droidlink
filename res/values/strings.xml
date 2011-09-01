@@ -12,6 +12,6 @@
     <string name="auth_error">Failed to authenticate.</string>
     <string name="auth_pending">Authenticating...</string>
     <string name="please_wait">Please wait</string>
-    <string name="device_init_running">Initializing...</string>
-    <string name="device_init_error">Initialization failed.</string>
+    <string name="device_setup_running">Registering device...</string>
+    <string name="device_setup_error">Device registration failed.</string>
 </resources>
