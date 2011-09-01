@@ -301,9 +301,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     if (localEventIds.contains(eventId)) {
                         // Found the event: update it.
                         values.clear();
-                        values.put(NUMBER, event.getString("number"));
-                        values.put(NAME, event.getString("name"));
-                        values.put(MESSAGE, event.getString("message"));
+                        values.put(NUMBER, trimToNull(event.getString("number")));
+                        values.put(NAME, trimToNull(event.getString("name")));
+                        values.put(MESSAGE, trimToNull(event.getString("message")));
                         eventSelectionArgs[0] = eventId;
                         
                         if (DEVELOPER_MODE) {
@@ -319,9 +319,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         values.put(DEVICE_ID, deviceId);
                         values.put(CREATED, event.getLong("created"));
                         values.put(TYPE, event.getInt("type"));
-                        values.put(NUMBER, event.getString("number"));
-                        values.put(NAME, event.getString("name"));
-                        values.put(MESSAGE, event.getString("message"));
+                        values.put(NUMBER, trimToNull(event.getString("number")));
+                        values.put(NAME, trimToNull(event.getString("name")));
+                        values.put(MESSAGE, trimToNull(event.getString("message")));
                         values.put(STATE, EventsContract.UPLOADED_STATE);
                         
                         if (DEVELOPER_MODE) {
@@ -412,5 +412,19 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         final SharedPreferences.Editor prefsEditor = prefs.edit();
         prefsEditor.putLong(SP_KEY_LAST_SYNC, System.currentTimeMillis());
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+    }
+    
+    /**
+     * Remove trailing spaces.
+     */
+    private static String trimToNull(String s) {
+        if (s == null) {
+            return null;
+        }
+        final String s2 = s.trim();
+        if ("null".equals(s2) || s2.length() == 0) {
+            return null;
+        }
+        return s2;
     }
 }
