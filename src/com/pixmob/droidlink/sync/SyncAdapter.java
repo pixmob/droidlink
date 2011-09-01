@@ -105,8 +105,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private void doPerformSync(NetworkClient client, SharedPreferences prefs,
             ContentProviderClient provider, SyncResult syncResult) {
         // Prepare the query.
-        final String selection = STATE + "=? OR " + STATE + "=?";
-        final String[] selectionArgs = { String.valueOf(EventsContract.PENDING_UPLOAD_STATE),
+        final String selection = DEVICE_ID + "=? AND " + STATE + "=? OR " + STATE + "=?";
+        final String[] selectionArgs = { client.getDeviceId(),
+                String.valueOf(EventsContract.PENDING_UPLOAD_STATE),
                 String.valueOf(EventsContract.PENDING_DELETE_STATE) };
         
         // Get local data to sync.
@@ -130,7 +131,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 final int eventState = c.getInt(stateIdx);
                 
                 if (EventsContract.PENDING_UPLOAD_STATE == eventState) {
-                    // This is newly created event.
+                    // This is a newly created event.
                     final JSONObject event = new JSONObject();
                     try {
                         event.put("created", c.getLong(createdIdx));
@@ -158,13 +159,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 c.close();
                 c = null;
             }
-        }
-        
-        final int numEventsToUpload = eventsToUpload.size();
-        if (numEventsToUpload == 0) {
-            Log.i(TAG, "No events to upload");
-        } else {
-            Log.i(TAG, "Found " + numEventsToUpload + " event(s) to upload");
         }
         
         final ContentValues values = new ContentValues(1);
@@ -208,15 +202,34 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
         }
         
-        // Get all events from the remote server.
-        final JSONArray events;
+        // Get all user devices.
+        final Set<String> deviceIds = new HashSet<String>(4);
         if (DEVELOPER_MODE) {
-            Log.d(TAG, "Fetching events from the server");
+            Log.d(TAG, "Fetching devices from the server");
         }
         try {
-            events = client.getAsArray("/device/" + client.getDeviceId());
+            final JSONArray devices = client.getAsArray("/device");
+            final int devicesLen = devices.length();
+            if (devicesLen == 0) {
+                // Unlikely to happen; at least this user device should exist.
+                Log.i(TAG, "No devices found");
+            } else {
+                Log.i(TAG, "Found " + devicesLen + " device(s)");
+            }
+            
+            for (int i = 0; i < devicesLen; ++i) {
+                try {
+                    final JSONObject device = devices.getJSONObject(i);
+                    final String deviceId = device.getString("id");
+                    deviceIds.add(deviceId);
+                } catch (JSONException e) {
+                    Log.e(TAG, "Invalid device at index " + i + ": cannot sync", e);
+                    syncResult.stats.numParseExceptions++;
+                    return;
+                }
+            }
         } catch (IOException e) {
-            Log.e(TAG, "Event listing error: cannot sync", e);
+            Log.e(TAG, "Device listing error: cannot sync", e);
             syncResult.stats.numIoExceptions++;
             return;
         } catch (AppEngineAuthenticationException e) {
@@ -225,111 +238,139 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             return;
         }
         
-        final int eventsLen = events != null ? events.length() : 0;
-        if (eventsLen == 0) {
-            Log.i(TAG, "No events from the server");
-        } else {
-            Log.i(TAG, "Found " + eventsLen + " event(s) from the server");
-        }
-        
-        // Build a collection with local event identifiers.
-        // This collection will be used to identify which events have been
-        // deleted on the remote server.
-        final Set<String> localEventIds;
-        try {
-            c = provider.query(EventsContract.CONTENT_URI, PROJECTION_ID, STATE + "=?",
-                new String[] { String.valueOf(EventsContract.UPLOADED_STATE) }, null);
-            localEventIds = new HashSet<String>(c.getCount());
-            
-            final int idIdx = c.getColumnIndex(_ID);
-            while (c.moveToNext()) {
-                final String eventId = c.getString(idIdx);
-                localEventIds.add(eventId);
-            }
-        } catch (RemoteException e) {
-            Log.e(TAG, "Failed to get events from local database", e);
-            syncResult.stats.numIoExceptions++;
-            return;
-        } finally {
-            if (c != null) {
-                c.close();
-                c = null;
-            }
-        }
-        
-        // Reconcile remote events with local events.
-        for (int i = 0; i < eventsLen; ++i) {
-            String eventId = null;
-            try {
-                final JSONObject event = events.getJSONObject(i);
-                eventId = event.getString("id");
-                
-                // Check if this event exists in the local database.
-                if (localEventIds.contains(eventId)) {
-                    // Found the event: update it.
-                    values.clear();
-                    values.put(NUMBER, event.getString("number"));
-                    values.put(NAME, event.getString("name"));
-                    values.put(MESSAGE, event.getString("message"));
-                    eventSelectionArgs[0] = eventId;
-                    
-                    if (DEVELOPER_MODE) {
-                        Log.d(TAG, "Updating event in local database: " + eventId);
-                    }
-                    provider.update(EventsContract.CONTENT_URI, values, eventSelection,
-                        eventSelectionArgs);
-                    syncResult.stats.numUpdates++;
-                } else {
-                    // The event was not found: insert it.
-                    values.clear();
-                    values.put(_ID, eventId);
-                    values.put(DEVICE_ID, client.getDeviceId());
-                    values.put(CREATED, event.getLong("created"));
-                    values.put(TYPE, event.getInt("type"));
-                    values.put(NUMBER, event.getString("number"));
-                    values.put(NAME, event.getString("name"));
-                    values.put(MESSAGE, event.getString("message"));
-                    values.put(STATE, EventsContract.UPLOADED_STATE);
-                    
-                    if (DEVELOPER_MODE) {
-                        Log.d(TAG, "Adding event to local database: " + eventId);
-                    }
-                    provider.insert(EventsContract.CONTENT_URI, values);
-                    syncResult.stats.numInserts++;
-                }
-                
-                // This event now exists in the local database:
-                // remove its identifier from this collection as we don't
-                // want to delete it.
-                localEventIds.remove(eventId);
-            } catch (JSONException e) {
-                Log.w(TAG, "Invalid event at index " + i + ": cannot sync", e);
-                syncResult.stats.numSkippedEntries++;
-                continue;
-            } catch (RemoteException e) {
-                Log.w(TAG, "Failed to get event " + eventId + " from local database", e);
-                syncResult.stats.numIoExceptions++;
-            }
-        }
-        
-        // The remaining event identifiers was removed on the remote server:
-        // there are still present in the local database. These events are
-        // now being deleted.
-        for (final String eventId : localEventIds) {
+        for (final String deviceId : deviceIds) {
+            // Get all events from the remote server for this device.
+            final JSONArray events;
             if (DEVELOPER_MODE) {
-                Log.d(TAG, "Deleting event in local database: " + eventId);
+                Log.d(TAG, "Fetching events from the server for device " + deviceId);
             }
-            eventSelectionArgs[0] = eventId;
             try {
-                provider.delete(EventsContract.CONTENT_URI, eventSelection, eventSelectionArgs);
-                syncResult.stats.numDeletes++;
-            } catch (RemoteException e) {
-                Log.w(TAG, "Failed to delete event " + eventId + " from local database", e);
+                events = client.getAsArray("/device/" + deviceId);
+            } catch (IOException e) {
+                Log.e(TAG, "Event listing error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
+                return;
+            } catch (AppEngineAuthenticationException e) {
+                Log.e(TAG, "Authentication error: cannot sync", e);
+                syncResult.stats.numAuthExceptions++;
+                return;
+            }
+            
+            final int eventsLen = events != null ? events.length() : 0;
+            if (eventsLen == 0) {
+                Log.i(TAG, "No events from the server for device " + deviceId);
+            } else {
+                Log.i(TAG, "Found " + eventsLen + " event(s) from the server for device "
+                        + deviceId);
+            }
+            
+            // Build a collection with local event identifiers.
+            // This collection will be used to identify which events have been
+            // deleted on the remote server.
+            final Set<String> localEventIds;
+            try {
+                c = provider.query(EventsContract.CONTENT_URI, PROJECTION_ID, DEVICE_ID + "=? AND "
+                        + STATE + "=?", new String[] { deviceId,
+                        String.valueOf(EventsContract.UPLOADED_STATE) }, null);
+                localEventIds = new HashSet<String>(c.getCount());
+                
+                final int idIdx = c.getColumnIndexOrThrow(_ID);
+                while (c.moveToNext()) {
+                    final String eventId = c.getString(idIdx);
+                    localEventIds.add(eventId);
+                }
+            } catch (RemoteException e) {
+                Log.e(TAG, "Failed to get events from local database", e);
+                syncResult.stats.numIoExceptions++;
+                return;
+            } finally {
+                if (c != null) {
+                    c.close();
+                    c = null;
+                }
+            }
+            
+            // Reconcile remote events with local events.
+            for (int i = 0; i < eventsLen; ++i) {
+                String eventId = null;
+                try {
+                    final JSONObject event = events.getJSONObject(i);
+                    eventId = event.getString("id");
+                    
+                    // Check if this event exists in the local database.
+                    if (localEventIds.contains(eventId)) {
+                        // Found the event: update it.
+                        values.clear();
+                        values.put(NUMBER, event.getString("number"));
+                        values.put(NAME, event.getString("name"));
+                        values.put(MESSAGE, event.getString("message"));
+                        eventSelectionArgs[0] = eventId;
+                        
+                        if (DEVELOPER_MODE) {
+                            Log.d(TAG, "Updating event in local database: " + eventId);
+                        }
+                        provider.update(EventsContract.CONTENT_URI, values, eventSelection,
+                            eventSelectionArgs);
+                        syncResult.stats.numUpdates++;
+                    } else {
+                        // The event was not found: insert it.
+                        values.clear();
+                        values.put(_ID, eventId);
+                        values.put(DEVICE_ID, deviceId);
+                        values.put(CREATED, event.getLong("created"));
+                        values.put(TYPE, event.getInt("type"));
+                        values.put(NUMBER, event.getString("number"));
+                        values.put(NAME, event.getString("name"));
+                        values.put(MESSAGE, event.getString("message"));
+                        values.put(STATE, EventsContract.UPLOADED_STATE);
+                        
+                        if (DEVELOPER_MODE) {
+                            Log.d(TAG, "Adding event to local database: " + eventId);
+                        }
+                        provider.insert(EventsContract.CONTENT_URI, values);
+                        syncResult.stats.numInserts++;
+                    }
+                    
+                    // This event now exists in the local database:
+                    // remove its identifier from this collection as we don't
+                    // want to delete it.
+                    localEventIds.remove(eventId);
+                } catch (JSONException e) {
+                    Log.w(TAG, "Invalid event at index " + i + ": cannot sync", e);
+                    syncResult.stats.numSkippedEntries++;
+                    continue;
+                } catch (RemoteException e) {
+                    Log.w(TAG, "Failed to get event " + eventId + " from local database", e);
+                    syncResult.stats.numIoExceptions++;
+                }
+            }
+            
+            // The remaining event identifiers was removed on the remote server:
+            // there are still present in the local database. These events are
+            // now being deleted.
+            for (final String eventId : localEventIds) {
+                if (DEVELOPER_MODE) {
+                    Log.d(TAG, "Deleting event in local database: " + eventId);
+                }
+                eventSelectionArgs[0] = eventId;
+                try {
+                    provider.delete(EventsContract.CONTENT_URI, eventSelection, eventSelectionArgs);
+                    syncResult.stats.numDeletes++;
+                } catch (RemoteException e) {
+                    Log.w(TAG, "Failed to delete event " + eventId + " from local database", e);
+                    syncResult.stats.numIoExceptions++;
+                }
             }
         }
         
-        // Send events to the remote server.
+        final int numEventsToUpload = eventsToUpload.size();
+        if (numEventsToUpload == 0) {
+            Log.i(TAG, "No events to upload");
+        } else {
+            Log.i(TAG, "Found " + numEventsToUpload + " event(s) to upload");
+        }
+        
+        // Send local events to the remote server.
         for (final Map.Entry<String, JSONObject> entry : eventsToUpload.entrySet()) {
             final String eventId = entry.getKey();
             final String eventUUID = client.getDeviceId() + "/" + eventId;
