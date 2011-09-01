@@ -73,12 +73,6 @@ public class DeviceInitService extends AbstractNetworkService {
     @Override
     protected void onHandleActionInternal(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
-        final Notification n = new Notification(android.R.drawable.stat_sys_upload,
-                getString(R.string.device_init_running), System.currentTimeMillis());
-        n.setLatestEventInfo(this, getString(R.string.app_name),
-            getString(R.string.device_init_running), openMainActivity);
-        startForeground(R.string.device_init_running, n);
-        
         try {
             generateId();
             registerC2DM();
@@ -86,8 +80,6 @@ public class DeviceInitService extends AbstractNetworkService {
         } catch (ActionExecutionFailedException e) {
             showErrorNotification();
             throw e;
-        } finally {
-            stopForeground(true);
         }
     }
     
@@ -117,6 +109,12 @@ public class DeviceInitService extends AbstractNetworkService {
             final String deviceC2dm = prefs.getString(SP_KEY_DEVICE_C2DM, null);
             
             if (deviceName != null || deviceC2dm != null) {
+                final Notification n = new Notification(android.R.drawable.stat_sys_upload,
+                        getString(R.string.device_init_running), System.currentTimeMillis());
+                n.setLatestEventInfo(this, getString(R.string.app_name),
+                    getString(R.string.device_init_running), openMainActivity);
+                startForeground(R.string.device_init_running, n);
+                
                 final NetworkClient client = NetworkClient.newInstance(this);
                 if (client != null) {
                     try {
@@ -140,6 +138,7 @@ public class DeviceInitService extends AbstractNetworkService {
                         throw new ActionExecutionFailedException(
                                 "Authentication error: cannot init device", e);
                     } finally {
+                        stopForeground(true);
                         client.close();
                     }
                 }
