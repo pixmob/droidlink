@@ -93,6 +93,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             return;
         }
         
+        // Check if a synchronization was just made: do not run twice.
+        final long lastSync = prefs.getLong(SP_KEY_LAST_SYNC, 0);
+        if (System.currentTimeMillis() - lastSync < 1000) {
+            Log.w(TAG, "Skip synchronization for user account " + account.name
+                    + " since it has just ran");
+            return;
+        }
+        
         // Check if a network client can be created
         // (a device identifier is required).
         final NetworkClient client = NetworkClient.newInstance(getContext());
