@@ -196,7 +196,7 @@ public class NetworkClient {
             return null;
         }
         
-        final String strResp = EntityUtils.toString(entity);
+        final String strResp = EntityUtils.toString(entity, CHARSET);
         if (TextUtils.isEmpty(strResp)) {
             if (DEVELOPER_MODE) {
                 Log.d(TAG, "Empty JSON result for request " + requestUri);
