@@ -93,7 +93,7 @@ public class C2DMReceiver extends C2DMBaseReceiver {
         final String message = intent.getStringExtra(C2DM_MESSAGE_EXTRA);
         final String account = intent.getStringExtra(C2DM_ACCOUNT_EXTRA);
         if (C2DM_MESSAGE_SYNC.equals(message) && !TextUtils.isEmpty(account)) {
-            Log.i(TAG, "Sync required through C2DM");
+            Log.i(TAG, "Sync required by a push notification");
             
             // When a push notification is received, we perform a FULL
             // synchronization: local events are uploaded/deleted, and new
