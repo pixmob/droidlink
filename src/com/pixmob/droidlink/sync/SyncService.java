@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.services;
+package com.pixmob.droidlink.sync;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-import com.pixmob.droidlink.sync.SyncAdapter;
 
 /**
  * Synchronize events. This service is called by the Android system when a

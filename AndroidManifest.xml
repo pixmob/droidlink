@@ -71,7 +71,7 @@
         <service android:name=".services.DeviceInitService"></service>
         <service android:name=".C2DMReceiver" />
 
-        <service android:name=".services.SyncService"
+        <service android:name=".sync.SyncService"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
