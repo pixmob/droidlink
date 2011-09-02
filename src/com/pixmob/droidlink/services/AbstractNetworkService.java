@@ -33,7 +33,11 @@ abstract class AbstractNetworkService extends ActionService {
     private final String serviceName;
     
     public AbstractNetworkService(final String serviceName) {
-        super(serviceName, 30 * 1000, 2);
+        this(serviceName, 30 * 1000, 2);
+    }
+    
+    public AbstractNetworkService(final String serviceName, long idleTimeout, int intentBacklogSize) {
+        super(serviceName, idleTimeout, intentBacklogSize);
         this.serviceName = serviceName;
     }
     

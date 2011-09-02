@@ -58,7 +58,7 @@ public class DeviceInitService extends AbstractNetworkService {
     private SharedPreferences.Editor prefsEditor;
     
     public DeviceInitService() {
-        super("DroidLink/DeviceInit");
+        super("DroidLink/DeviceInit", 120 * 1000, 4);
     }
     
     @Override
