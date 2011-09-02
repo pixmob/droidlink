@@ -24,6 +24,7 @@ import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
+import static com.pixmob.droidlink.Constants.SP_KEY_FULL_SYNC;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
@@ -93,6 +94,12 @@ public class C2DMReceiver extends C2DMBaseReceiver {
         final String account = intent.getStringExtra(C2DM_ACCOUNT_EXTRA);
         if (C2DM_MESSAGE_SYNC.equals(message) && !TextUtils.isEmpty(account)) {
             Log.i(TAG, "Sync required through C2DM");
+            
+            // When a push notification is received, we perform a FULL
+            // synchronization: local events are uploaded/deleted, and new
+            // events are downloaded.
+            prefsEditor.putBoolean(SP_KEY_FULL_SYNC, true);
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
             
             // Start synchronization.
             ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT),
