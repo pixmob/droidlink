@@ -57,6 +57,7 @@ public final class Constants {
     public static final String C2DM_SENDER_ID = "pixmobstudio@gmail.com";
     public static final String C2DM_MESSAGE_EXTRA = "message";
     public static final String C2DM_MESSAGE_SYNC = "sync";
+    public static final String C2DM_ACCOUNT_EXTRA = "account";
     
     public static final String ACTION_LOGIN = "com.pixmob.droidlink.login";
     public static final String EXTRA_ACCOUNT = "account";
