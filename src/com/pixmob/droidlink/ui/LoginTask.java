@@ -19,7 +19,6 @@ import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
-import static com.pixmob.droidlink.Constants.SP_KEY_FULL_SYNC;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
@@ -122,12 +121,11 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
             ContentResolver.setSyncAutomatically(new Account(newAccount, GOOGLE_ACCOUNT),
                 EventsContract.AUTHORITY, true);
             
-            // When an account is selected, a full synchronization is made.
-            prefsEditor.putBoolean(SP_KEY_FULL_SYNC, true);
-            
             // Start synchronization.
+            final Bundle options = new Bundle();
+            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.FULL_SYNC);
             ContentResolver.requestSync(new Account(newAccount, GOOGLE_ACCOUNT),
-                EventsContract.AUTHORITY, new Bundle());
+                EventsContract.AUTHORITY, options);
         } else {
             // Restore old account.
             prefsEditor.putString(SP_KEY_ACCOUNT, oldAccount);

@@ -24,7 +24,6 @@ import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
-import static com.pixmob.droidlink.Constants.SP_KEY_FULL_SYNC;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
@@ -95,15 +94,14 @@ public class C2DMReceiver extends C2DMBaseReceiver {
         if (C2DM_MESSAGE_SYNC.equals(message) && !TextUtils.isEmpty(account)) {
             Log.i(TAG, "Sync required by a push notification");
             
-            // When a push notification is received, we perform a FULL
-            // synchronization: local events are uploaded/deleted, and new
-            // events are downloaded.
-            prefsEditor.putBoolean(SP_KEY_FULL_SYNC, true);
-            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
-            
             // Start synchronization.
+            final Bundle options = new Bundle();
+            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.FULL_SYNC);
+            // When a push notification is received, we perform a FULL
+            // synchronization: local events are uploaded/deleted, and remote
+            // events are synchronized.
             ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT),
-                EventsContract.AUTHORITY, new Bundle());
+                EventsContract.AUTHORITY, options);
         } else {
             Log.w(TAG, "Unsupported C2DM message: " + intent);
         }

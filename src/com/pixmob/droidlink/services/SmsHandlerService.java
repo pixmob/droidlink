@@ -97,16 +97,18 @@ public class SmsHandlerService extends ActionService {
             
             Log.i(TAG, "Got SMS: number=" + fromAddress + ", name=" + fromDisplayName + ", time="
                     + message.getTimestampMillis());
-            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(),
-                message.getTimestampMillis());
+            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(), message
+                    .getTimestampMillis());
         }
         
         if (pdus.length != 0) {
             // Start synchronization.
             final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
             if (accountName != null) {
+                final Bundle options = new Bundle();
+                options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.LIGHT_SYNC);
                 ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
-                    EventsContract.AUTHORITY, new Bundle());
+                    EventsContract.AUTHORITY, options);
             }
         }
     }

@@ -19,7 +19,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-
 /**
  * Synchronize events. This service is called by the Android system when a
  * synchronization is required. This class delegates to {@link SyncAdapter}.
@@ -31,7 +30,7 @@ public class SyncService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        syncAdapter = new SyncAdapter(getApplicationContext(), false);
+        syncAdapter = new SyncAdapter(getApplicationContext());
     }
     
     @Override

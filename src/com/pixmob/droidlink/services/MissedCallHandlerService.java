@@ -92,8 +92,10 @@ public class MissedCallHandlerService extends ActionService {
                         // Start synchronization.
                         final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
                         if (accountName != null) {
+                            final Bundle options = new Bundle();
+                            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.LIGHT_SYNC);
                             ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
-                                EventsContract.AUTHORITY, new Bundle());
+                                EventsContract.AUTHORITY, options);
                         }
                     } else {
                         if (DEVELOPER_MODE) {

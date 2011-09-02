@@ -33,6 +33,23 @@ public class EventsContract {
     public static final int PENDING_DELETE_STATE = 2;
     
     /**
+     * Synchronization strategy: light or full. Set this key when calling
+     * <code>ContentResolver.requestSync</code> to specify how the
+     * synchronization should be done.
+     */
+    public static final String SYNC_STRATEGY = "syncStrategy";
+    /**
+     * Perform a "full" synchronization: remote events are synchronized.
+     * @see #SYNC_STRATEGY
+     */
+    public static final int FULL_SYNC = 2;
+    /**
+     * Perform a "light" synchronization: remote events are not synchronized.
+     * @see #SYNC_STRATEGY
+     */
+    public static final int LIGHT_SYNC = 4;
+    
+    /**
      * Event type for a missed call.
      */
     public static final int MISSED_CALL_TYPE = 0;

@@ -19,7 +19,6 @@ import static android.provider.BaseColumns._ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
-import static com.pixmob.droidlink.Constants.SP_KEY_FULL_SYNC;
 import static com.pixmob.droidlink.Constants.SP_KEY_LAST_SYNC;
 import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
@@ -66,12 +65,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String[] PROJECTION = { _ID, TYPE, CREATED, NUMBER, NAME, MESSAGE, STATE };
     private static final String[] PROJECTION_ID = { _ID };
     
-    public SyncAdapter(final Context context, final boolean autoInitialize) {
-        super(context, autoInitialize);
+    public SyncAdapter(final Context context) {
+        super(context, false);
     }
     
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
+            ContentProviderClient provider, SyncResult syncResult) {
+        try {
+            doPerformSync(account, extras, authority, provider, syncResult);
+        } catch (Exception e) {
+            Log.e(TAG, "Synchronization error", e);
+        }
+    }
+    
+    private void doPerformSync(Account account, Bundle extras, String authority,
             ContentProviderClient provider, SyncResult syncResult) {
         final SharedPreferences prefs = getContext().getSharedPreferences(SHARED_PREFERENCES_FILE,
             Context.MODE_PRIVATE);
@@ -96,7 +104,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         
         Log.i(TAG, "Start synchronization for user " + accountName);
         
-        final boolean fullSync = prefs.getBoolean(SP_KEY_FULL_SYNC, false);
+        final boolean fullSync = extras.getInt(EventsContract.SYNC_STRATEGY,
+            EventsContract.FULL_SYNC) == EventsContract.FULL_SYNC;
         if (!fullSync) {
             Log.i(TAG, "Performing LIGHT sync");
         }
@@ -425,7 +434,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         
         // Store sync time.
         final SharedPreferences.Editor prefsEditor = prefs.edit();
-        prefsEditor.putBoolean(SP_KEY_FULL_SYNC, false);
         prefsEditor.putLong(SP_KEY_LAST_SYNC, System.currentTimeMillis());
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
     }
