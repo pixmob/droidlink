@@ -111,12 +111,13 @@ public class DeviceInitService extends AbstractNetworkService {
     }
     
     private void uploadDeviceConf() throws ActionExecutionFailedException {
-        final boolean syncRequired = prefs.getBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, true);
+        final boolean syncRequired = prefs.getBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
         if (syncRequired) {
             final String deviceName = prefs.getString(SP_KEY_DEVICE_NAME, null);
             final String deviceC2dm = prefs.getString(SP_KEY_DEVICE_C2DM, null);
             
-            if (deviceName != null && deviceC2dm != null) {
+            final NetworkClient client = NetworkClient.newInstance(this);
+            if (client != null) {
                 final Notification n = new Notification(android.R.drawable.stat_notify_sync,
                         getString(R.string.device_setup_running), System.currentTimeMillis());
                 n.setLatestEventInfo(this, getString(R.string.app_name),
@@ -124,35 +125,27 @@ public class DeviceInitService extends AbstractNetworkService {
                 startForeground(R.string.device_setup_running, n);
                 
                 try {
-                    final NetworkClient client = NetworkClient.newInstance(this);
-                    if (client != null) {
-                        try {
-                            final JSONObject data = new JSONObject();
-                            data.put("name", deviceName);
-                            data.put("c2dm", deviceC2dm);
-                            
-                            if (DEVELOPER_MODE) {
-                                Log.i(TAG, "Initializing device " + client.getDeviceId()
-                                        + ": name=" + deviceName + ", c2dm=" + deviceC2dm);
-                            }
-                            client.put("/device/" + client.getDeviceId(), data);
-                            
-                            prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
-                            Features.getFeature(SharedPreferencesSaverFeature.class).save(
-                                prefsEditor);
-                        } catch (JSONException e) {
-                            throw new ActionExecutionFailedException("JSON error", e);
-                        } catch (IOException e) {
-                            throw new ActionExecutionFailedException(
-                                    "I/O error: cannot init device", e);
-                        } catch (AppEngineAuthenticationException e) {
-                            throw new ActionExecutionFailedException(
-                                    "Authentication error: cannot init device", e);
-                        } finally {
-                            client.close();
-                        }
+                    final JSONObject data = new JSONObject();
+                    data.put("name", deviceName);
+                    data.put("c2dm", deviceC2dm);
+                    
+                    if (DEVELOPER_MODE) {
+                        Log.i(TAG, "Initializing device " + client.getDeviceId() + ": name="
+                                + deviceName + ", c2dm=" + deviceC2dm);
                     }
+                    client.put("/device/" + client.getDeviceId(), data);
+                    
+                    prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
+                    Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+                } catch (JSONException e) {
+                    throw new ActionExecutionFailedException("JSON error: cannot init device", e);
+                } catch (IOException e) {
+                    throw new ActionExecutionFailedException("I/O error: cannot init device", e);
+                } catch (AppEngineAuthenticationException e) {
+                    throw new ActionExecutionFailedException(
+                            "Authentication error: cannot init device", e);
                 } finally {
+                    client.close();
                     stopForeground(true);
                 }
             }

@@ -18,7 +18,8 @@ package com.pixmob.droidlink.ui;
 import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
-import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
@@ -83,8 +84,8 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
             final JSONObject data = new JSONObject();
             
             try {
-                data.put("name", "");
-                data.put("c2dm", "");
+                data.put("name", prefs.getString(SP_KEY_DEVICE_NAME, null));
+                data.put("c2dm", prefs.getString(SP_KEY_DEVICE_C2DM, null));
                 client.put("/device/" + client.getDeviceId(), data);
                 authResult = AUTH_OK;
             } catch (AppEngineAuthenticationException e) {
@@ -110,7 +111,6 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
                 contentResolver.update(EventsContract.CONTENT_URI, cv, null, null);
             }
             
-            prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, true);
             prefsEditor.putString(SP_KEY_ACCOUNT, newAccount);
             
             // Enable synchronization only for our user.
