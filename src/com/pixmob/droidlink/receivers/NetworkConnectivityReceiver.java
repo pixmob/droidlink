@@ -33,7 +33,7 @@ import com.pixmob.droidlink.services.DeviceInitService;
 public class NetworkConnectivityReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (isNetworkAvailable(intent)) {
+        if (isNetworkAvailable(context, intent)) {
             Log.i(TAG, "Network is available");
             context.startService(new Intent(context, DeviceInitService.class));
         } else {
@@ -41,15 +41,12 @@ public class NetworkConnectivityReceiver extends BroadcastReceiver {
         }
     }
     
-    private boolean isNetworkAvailable(Intent intent) {
-        if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-            if (!intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false)) {
-                final NetworkInfo networkInfo = (NetworkInfo) intent
-                        .getParcelableExtra(ConnectivityManager.EXTRA_EXTRA_INFO);
-                if (networkInfo != null) {
-                    return networkInfo.isAvailable() && networkInfo.isConnected();
-                }
-            }
+    private boolean isNetworkAvailable(Context context, Intent intent) {
+        final ConnectivityManager cm = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        if (networkInfo != null) {
+            return networkInfo.isAvailable() && networkInfo.isConnected();
         }
         return false;
     }
