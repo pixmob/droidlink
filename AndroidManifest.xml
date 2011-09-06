@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.pixmob.droidlink" android:versionCode="1"
-    android:versionName="1.0">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pixmob.droidlink"
+    android:versionCode="1" android:versionName="1.0">
 
     <uses-sdk android:minSdkVersion="8" />
     <supports-screens android:xlargeScreens="true" />
@@ -21,18 +20,18 @@
     <uses-permission android:name="com.pixmob.droidlink.permission.C2D_MESSAGE" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
 
-    <application android:icon="@drawable/icon"
-        android:label="@string/app_name" android:theme="@android:style/Theme.Black.NoTitleBar"
-        android:name=".Application">
-        <activity android:name=".ui.EventsActivity"
-            android:label="@string/app_name">
+    <application android:icon="@drawable/icon" android:label="@string/app_name"
+        android:theme="@android:style/Theme.Black.NoTitleBar" android:name=".Application"
+        android:hardwareAccelerated="true">
+        <activity android:name=".ui.EventsActivity" android:label="@string/app_name"
+            android:theme="@style/Theme.Sherlock">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.SelectAccountActivity"
-            android:label="@string/account_selection"></activity>
+        <activity android:name=".ui.SelectAccountActivity" android:label="@string/account_selection"></activity>
+        <activity android:name=".ui.PreferencesActivity"></activity>
 
         <receiver android:name=".receivers.SmsReceiver">
             <intent-filter android:priority="100">
@@ -62,12 +61,9 @@
             </intent-filter>
         </receiver>
 
-        <provider android:authorities="com.pixmob.droidlink"
-            android:name=".providers.EventsContentProvider"
-            android:label="@string/app_name" android:exported="true"
-            android:syncable="true">
-            <grant-uri-permission
-                android:pathPattern=".*" />
+        <provider android:authorities="com.pixmob.droidlink" android:name=".providers.EventsContentProvider"
+            android:label="@string/app_name" android:exported="true" android:syncable="true">
+            <grant-uri-permission android:pathPattern=".*" />
         </provider>
 
         <service android:name=".services.MissedCallHandlerService"></service>
@@ -75,13 +71,11 @@
         <service android:name=".services.DeviceInitService"></service>
         <service android:name=".C2DMReceiver" />
 
-        <service android:name=".sync.SyncService"
-            android:exported="true" android:process=":sync">
+        <service android:name=".sync.SyncService" android:exported="true" android:process=":sync">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
-            <meta-data android:name="android.content.SyncAdapter"
-                android:resource="@xml/syncadapter" />
+            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/syncadapter" />
         </service>
     </application>
 </manifest>

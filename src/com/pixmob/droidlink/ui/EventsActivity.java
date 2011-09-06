@@ -18,6 +18,7 @@ package com.pixmob.droidlink.ui;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.Window;
 
 import com.pixmob.droidlink.R;
 
@@ -28,13 +29,22 @@ import com.pixmob.droidlink.R;
 public class EventsActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        
         super.onCreate(savedInstanceState);
+        
         setContentView(R.layout.events);
+        setProgressBarIndeterminateVisibility(Boolean.FALSE);
+        setProgressBarVisibility(false);
         
         if (savedInstanceState == null) {
             final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.add(android.R.id.content, new EventsFragment());
             ft.commit();
         }
+        
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
+        getSupportActionBar().setTitle(R.string.app_name);
     }
 }
