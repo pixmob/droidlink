@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Droid Link</string>
     <string name="account_selection">Account selection</string>
-    <string name="select_account">Select an account for connecting your phone:</string>
+    <string name="select_account">Select an account for connecting your device:</string>
     <string name="ok">OK</string>
     <string name="error">Sorry!</string>
     <string name="no_account_available">No Google account available!</string>
