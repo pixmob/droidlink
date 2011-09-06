@@ -24,12 +24,8 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
-import android.widget.CheckedTextView;
 import android.widget.ListView;
 
 import com.pixmob.droidlink.R;
@@ -45,6 +41,7 @@ public class SelectAccountActivity extends ListActivity {
     private static final int NO_ACCOUNT_AVAILABLE_DIALOG = 2;
     private static final int AUTH_PROGRESS_DIALOG = 3;
     private static final int AUTH_ERROR_DIALOG = 4;
+    private AccountAdapter accountAdapter;
     private String accountName;
     private State state;
     
@@ -55,18 +52,18 @@ public class SelectAccountActivity extends ListActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE_DIALOG == id) {
-            return new AlertDialog.Builder(this)
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            setResult(RESULT_CANCELED);
-                            finish();
-                        }
-                    }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
+            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        setResult(RESULT_CANCELED);
+                        finish();
+                    }
+                }).setTitle(R.string.error).setMessage(R.string.no_account_available).create();
         }
         if (AUTH_ERROR_DIALOG == id) {
-            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null)
-                    .setTitle(R.string.error).setMessage(R.string.auth_error).create();
+            return new AlertDialog.Builder(this).setPositiveButton(R.string.ok, null).setTitle(
+                R.string.error).setMessage(R.string.auth_error).create();
         }
         if (AUTH_PROGRESS_DIALOG == id) {
             final ProgressDialog d = new ProgressDialog(this);
@@ -118,7 +115,6 @@ public class SelectAccountActivity extends ListActivity {
             // the application cannot run.
             showDialog(NO_ACCOUNT_AVAILABLE_DIALOG);
         } else {
-            setListAdapter(new AccountAdapter(accounts));
             
             if (accountName != null) {
                 // Check if the selected account still exists:
@@ -136,6 +132,9 @@ public class SelectAccountActivity extends ListActivity {
                     accountName = null;
                 }
             }
+            
+            accountAdapter = new AccountAdapter(this, accounts);
+            setListAdapter(accountAdapter);
         }
         
         findViewById(R.id.ok_button).setEnabled(accountName != null);
@@ -157,7 +156,8 @@ public class SelectAccountActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         accountName = ((Account) l.getItemAtPosition(position)).name;
-        ((AccountAdapter) getListAdapter()).notifyDataSetInvalidated();
+        accountAdapter.setSelectedAccount(accountName);
+        accountAdapter.notifyDataSetInvalidated();
         findViewById(R.id.ok_button).setEnabled(true);
     }
     
@@ -175,26 +175,6 @@ public class SelectAccountActivity extends ListActivity {
     private void checkAccount() {
         state.loginTask = new InternalLoginTask(state);
         state.loginTask.execute(accountName);
-    }
-    
-    private class AccountAdapter extends ArrayAdapter<Account> {
-        public AccountAdapter(Account[] objects) {
-            super(SelectAccountActivity.this, R.layout.account_row, R.id.account_name, objects);
-        }
-        
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            final LayoutInflater inflater = getLayoutInflater();
-            final View row = inflater.inflate(R.layout.account_row, null);
-            row.setTag(row.findViewById(R.id.account_name));
-            
-            final Account account = getItem(position);
-            final CheckedTextView ctv = (CheckedTextView) row.getTag();
-            ctv.setChecked(account.name.equals(SelectAccountActivity.this.accountName));
-            ctv.setText(account.name);
-            
-            return row;
-        }
     }
     
     private static void dismissDialog(Activity a, int dialogId) {
