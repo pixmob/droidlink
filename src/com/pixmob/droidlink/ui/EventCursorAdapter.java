@@ -31,15 +31,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 import com.pixmob.droidlink.R;
@@ -66,7 +66,8 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
                 R.layout.event_row,
                 c,
                 new String[] { NAME, NUMBER, CREATED, MESSAGE },
-                new int[] { R.id.event_name, R.id.event_number, R.id.event_date, R.id.event_message });
+                new int[] { R.id.event_name, R.id.event_number, R.id.event_date, R.id.event_message },
+                0);
         
         if (deviceCanCall == null) {
             // The icon for calling back a contact is hidden if the current
@@ -88,9 +89,8 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         final int type = cursor.getInt(cursor.getColumnIndex(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
-            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
-            DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
+                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
         
         final String message = cursor.getString(cursor.getColumnIndex(MESSAGE));
         
