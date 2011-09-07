@@ -16,6 +16,7 @@
 package com.pixmob.droidlink.ui;
 
 import android.os.Bundle;
+import android.support.v4.app.ActionBar;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.Window;
@@ -44,7 +45,8 @@ public class EventsActivity extends FragmentActivity {
             ft.commit();
         }
         
-        getSupportActionBar().setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setTitle(R.string.app_name);
+        final ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayShowTitleEnabled(true);
+        actionBar.setDisplayShowHomeEnabled(false);
     }
 }

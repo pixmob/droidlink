@@ -16,8 +16,6 @@
 package com.pixmob.droidlink.ui;
 
 import static android.provider.BaseColumns._ID;
-import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
-import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
@@ -28,17 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -49,35 +42,19 @@ import com.pixmob.droidlink.providers.EventsContract;
  * Data source for device events.
  * @author Pixmob
  */
-class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener {
+class EventCursorAdapter extends SimpleCursorAdapter {
     public static final int TAG_ID = R.id.event_date;
-    private static final int TAG_NUMBER = R.id.event_number;
+    private static final int[] TO = new int[] { R.id.event_name, R.id.event_number,
+            R.id.event_date, R.id.event_message };
+    private static final String[] FROM = new String[] { NAME, NUMBER, CREATED, MESSAGE };
     private static final Map<Integer, Integer> EVENT_ICONS = new HashMap<Integer, Integer>(2);
     static {
         EVENT_ICONS.put(EventsContract.MISSED_CALL_TYPE, R.drawable.ic_missed_call);
         EVENT_ICONS.put(EventsContract.RECEIVED_SMS_TYPE, R.drawable.ic_sms_mms);
     }
-    private static Boolean deviceCanCall;
-    private final boolean showMessage;
     
     public EventCursorAdapter(Context context, Cursor c) {
-        super(
-                context,
-                R.layout.event_row,
-                c,
-                new String[] { NAME, NUMBER, CREATED, MESSAGE },
-                new int[] { R.id.event_name, R.id.event_number, R.id.event_date, R.id.event_message },
-                0);
-        
-        if (deviceCanCall == null) {
-            // The icon for calling back a contact is hidden if the current
-            // device is actually not a phone.
-            final TelephonyManager tm = (TelephonyManager) context
-                    .getSystemService(Context.TELEPHONY_SERVICE);
-            deviceCanCall = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
-        }
-        
-        showMessage = context.getResources().getBoolean(R.bool.show_event_message);
+        super(context, R.layout.event_row, c, FROM, TO, 0);
     }
     
     @Override
@@ -118,7 +95,6 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         
         tv = (TextView) v.findViewById(R.id.event_message);
         tv.setText(message);
-        tv.setVisibility(showMessage ? View.VISIBLE : View.GONE);
         
         ImageView iv = (ImageView) v.findViewById(R.id.event_icon);
         if (typeResourceId != null) {
@@ -129,40 +105,11 @@ class EventCursorAdapter extends SimpleCursorAdapter implements OnClickListener 
         }
         
         v.setTag(TAG_ID, cursor.getLong(cursor.getColumnIndex(_ID)));
-        
-        iv = (ImageView) v.findViewById(R.id.event_call_back);
-        iv.setTag(TAG_NUMBER, number);
-        iv.setOnClickListener(this);
-        
-        View divider = v.findViewById(R.id.vertical_divider);
-        if (deviceCanCall) {
-            iv.setVisibility(number != null ? View.VISIBLE : View.INVISIBLE);
-            divider.setVisibility(View.VISIBLE);
-        } else {
-            iv.setVisibility(View.GONE);
-            divider.setVisibility(View.GONE);
-        }
     }
     
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
         final LayoutInflater inflater = LayoutInflater.from(context);
         return inflater.inflate(R.layout.event_row, parent, false);
-    }
-    
-    @Override
-    public void onClick(View v) {
-        final String number = (String) v.getTag(EventCursorAdapter.TAG_NUMBER);
-        if (number == null) {
-            Log.w(TAG, "No number found for current event");
-        } else {
-            if (DEVELOPER_MODE) {
-                Log.i(TAG, "Opening dialer for " + number);
-            }
-            
-            // Prefill the dialer with the contact number.
-            final Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number));
-            v.getContext().startActivity(i);
-        }
     }
 }
