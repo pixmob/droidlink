@@ -15,8 +15,11 @@
  */
 package com.pixmob.droidlink.providers;
 
+import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
+import android.accounts.Account;
 import android.content.ContentResolver;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.BaseColumns;
 
 /**
@@ -57,6 +60,23 @@ public class EventsContract {
      * Event type for a SMS.
      */
     public static final int RECEIVED_SMS_TYPE = 1;
+    
+    /**
+     * Synchronize events for an account.
+     */
+    public static void sync(String account, int syncType) {
+        if (account == null) {
+            throw new IllegalArgumentException("Account is required");
+        }
+        if (syncType != FULL_SYNC && syncType != LIGHT_SYNC) {
+            throw new IllegalArgumentException("Invalid sync type: " + syncType);
+        }
+        
+        final Bundle options = new Bundle();
+        options.putInt(EventsContract.SYNC_STRATEGY, syncType);
+        ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT), EventsContract.AUTHORITY,
+            options);
+    }
     
     /**
      * Content type and column constants for the Events table.

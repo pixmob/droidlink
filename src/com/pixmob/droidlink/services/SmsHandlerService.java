@@ -16,7 +16,6 @@
 package com.pixmob.droidlink.services;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
-import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
@@ -27,14 +26,11 @@ import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
-import android.accounts.Account;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -105,10 +101,7 @@ public class SmsHandlerService extends ActionService {
             // Start synchronization.
             final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
             if (accountName != null) {
-                final Bundle options = new Bundle();
-                options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.LIGHT_SYNC);
-                ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
-                    EventsContract.AUTHORITY, options);
+                EventsContract.sync(accountName, EventsContract.LIGHT_SYNC);
             }
         }
     }
