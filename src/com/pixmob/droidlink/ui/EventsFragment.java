@@ -16,7 +16,8 @@
 package com.pixmob.droidlink.ui;
 
 import static android.provider.BaseColumns._ID;
-import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
+import static android.view.Menu.NONE;
 import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
@@ -26,14 +27,15 @@ import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+
+import java.lang.ref.WeakReference;
+
 import android.accounts.Account;
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -53,10 +55,15 @@ import com.pixmob.droidlink.providers.EventsContract;
  * Fragment for displaying device events.
  * @author Pixmob
  */
-class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
+public class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
     private static final String[] EVENT_COLUMNS = { _ID, CREATED, NUMBER, NAME, TYPE, MESSAGE };
+    private WeakReference<Listener> listenerRef;
     private EventCursorAdapter cursorAdapter;
     private SharedPreferences prefs;
+    
+    public void setListener(Listener listener) {
+        listenerRef = listener == null ? null : new WeakReference<Listener>(listener);
+    }
     
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -65,21 +72,26 @@ class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
         
         cursorAdapter = new EventCursorAdapter(getActivity(), null);
         setListAdapter(cursorAdapter);
-        
         setHasOptionsMenu(true);
+        
+        // The list is hidden until event cursor is loaded.
         setListShown(false);
+        setEmptyText(getString(R.string.no_events));
+        
+        // Start event loading.
         getLoaderManager().initLoader(0, null, this);
     }
     
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        menu.add(Menu.NONE, R.string.refresh, Menu.NONE, R.string.refresh)
-                .setIcon(R.drawable.gd_action_bar_refresh)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(Menu.NONE, R.string.settings, Menu.NONE, R.string.settings)
-                .setIcon(R.drawable.gd_action_bar_settings)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         super.onCreateOptionsMenu(menu, inflater);
+        menu.add(NONE, R.string.refresh, NONE, R.string.refresh).setIcon(R.drawable.ic_refresh)
+                .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        
+        menu.add(NONE, R.string.account_selection, NONE, R.string.account_selection).setIcon(
+            R.drawable.ic_menu_login);
+        menu.add(NONE, R.string.settings, NONE, R.string.settings).setIcon(
+            R.drawable.ic_menu_preferences);
     }
     
     @Override
@@ -91,37 +103,47 @@ class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
             case R.string.settings:
                 onSettings();
                 return true;
+            case R.string.account_selection:
+                onAccountSelection();
+                return true;
         }
         
         return super.onOptionsItemSelected(item);
     }
     
+    private void onSettings() {
+        startActivity(new Intent(getActivity(), PreferencesActivity.class));
+    }
+    
+    private void onAccountSelection() {
+        startActivity(new Intent(getActivity(), AccountsActivity.class));
+    }
+    
+    /**
+     * Start event synchronization.
+     */
     private void onRefresh() {
+        // Check if an account is set.
         final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
         if (accountName != null) {
             final Bundle options = new Bundle();
-            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.LIGHT_SYNC);
+            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.FULL_SYNC);
             ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
                 EventsContract.AUTHORITY, options);
         }
-    }
-    
-    private void onSettings() {
-        getActivity().startActivity(new Intent(getActivity(), PreferencesActivity.class));
     }
     
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         
-        final Long itemId = (Long) v.getTag(EventCursorAdapter.TAG_ID);
-        final Uri itemUri = ContentUris.withAppendedId(EventsContract.CONTENT_URI, itemId);
+        final String eventId = (String) v.getTag(EventCursorAdapter.TAG_ID);
+        Log.i(TAG, "Opening event details for " + eventId);
         
-        if (DEVELOPER_MODE) {
-            Log.i(TAG, "Opening event details for " + itemUri);
+        final Listener listener = listenerRef != null ? listenerRef.get() : null;
+        if (listener != null) {
+            listener.onEventSelected(eventId);
         }
-        
-        // TODO start the event details activity
     }
     
     @Override
@@ -135,6 +157,7 @@ class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
         cursorAdapter.swapCursor(data);
         
         if (isResumed()) {
+            // Events are available: the list is shown.
             setListShown(true);
         } else {
             setListShownNoAnimation(true);
@@ -144,5 +167,26 @@ class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         cursorAdapter.swapCursor(null);
+    }
+    
+    /**
+     * Listener methods for {@link EventsFragment}.
+     * @author Pixmob
+     */
+    public static interface Listener {
+        /**
+         * This method is called when event synchronization is started.
+         */
+        void onSynchronizationStart();
+        
+        /**
+         * This method is called when event synchronization is stopped.
+         */
+        void onSynchronizationStop();
+        
+        /**
+         * This method is called when an event is selected.
+         */
+        void onEventSelected(String eventId);
     }
 }

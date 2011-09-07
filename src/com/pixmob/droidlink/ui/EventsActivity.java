@@ -15,38 +15,103 @@
  */
 package com.pixmob.droidlink.ui;
 
+import android.accounts.Account;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.Window;
 
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.util.Accounts;
 
 /**
- * Activity host for {@link EventsFragment}.
+ * Application entry point, displaying events thanks to {@link EventsFragment}.
  * @author Pixmob
  */
-public class EventsActivity extends FragmentActivity {
+public class EventsActivity extends FragmentActivity implements EventsFragment.Listener {
+    private static final int NO_ACCOUNT_AVAILABLE = 1;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(android.view.Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
         super.onCreate(savedInstanceState);
-        
         setContentView(R.layout.events);
+        
+        // A spinner is displayed when events are synchronizing.
         setProgressBarIndeterminateVisibility(Boolean.FALSE);
         setProgressBarVisibility(false);
         
-        if (savedInstanceState == null) {
-            final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-            ft.add(android.R.id.content, new EventsFragment());
-            ft.commit();
+        // Customize action bar.
+        final ActionBar actionBar = getSupportActionBar();
+        actionBar.setCustomView(R.layout.nav);
+        actionBar.setDisplayShowCustomEnabled(true);
+        actionBar.setDisplayShowHomeEnabled(false);
+        actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
+    }
+    
+    @Override
+    public void onAttachFragment(Fragment fragment) {
+        if (fragment instanceof EventsFragment) {
+            final EventsFragment ef = (EventsFragment) fragment;
+            ef.setListener(this);
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Check if there are any Google accounts on this device.
+        final Account[] accounts = Accounts.list(this);
+        if (accounts.length == 0) {
+            showDialog(NO_ACCOUNT_AVAILABLE);
+        }
+    }
+    
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        if (NO_ACCOUNT_AVAILABLE == id) {
+            return new AlertDialog.Builder(this).setTitle(R.string.error).setIcon(
+                R.drawable.ic_dialog_alert).setMessage(R.string.no_account_available)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // There is no Google account on this device:
+                            // the application cannot run.
+                            finish();
+                        }
+                    }).create();
         }
         
-        final ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setDisplayShowHomeEnabled(false);
+        return super.onCreateDialog(id);
+    }
+    
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // Enable dithering, ie better gradients.
+        getWindow().setFormat(PixelFormat.RGBA_8888);
+    }
+    
+    @Override
+    public void onEventSelected(String eventId) {
+        // TODO Start event details activity.
+    }
+    
+    @Override
+    public void onSynchronizationStart() {
+        setProgressBarIndeterminateVisibility(Boolean.TRUE);
+    }
+    
+    @Override
+    public void onSynchronizationStop() {
+        setProgressBarIndeterminateVisibility(Boolean.FALSE);
     }
 }

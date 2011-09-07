@@ -104,7 +104,7 @@ class EventCursorAdapter extends SimpleCursorAdapter {
             iv.setVisibility(View.INVISIBLE);
         }
         
-        v.setTag(TAG_ID, cursor.getLong(cursor.getColumnIndex(_ID)));
+        v.setTag(TAG_ID, cursor.getString(cursor.getColumnIndex(_ID)));
     }
     
     @Override

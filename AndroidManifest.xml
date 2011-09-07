@@ -30,7 +30,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.SelectAccountActivity" android:label="@string/account_selection"></activity>
+        <activity android:name=".ui.AccountsActivity" android:label="@string/account_selection"
+            android:theme="@style/Theme.Sherlock"></activity>
         <activity android:name=".ui.PreferencesActivity"></activity>
 
         <receiver android:name=".receivers.SmsReceiver">

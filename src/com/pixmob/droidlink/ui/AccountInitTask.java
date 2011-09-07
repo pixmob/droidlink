@@ -34,7 +34,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.pixmob.appengine.client.AppEngineAuthenticationException;
@@ -48,7 +47,7 @@ import com.pixmob.droidlink.util.Accounts;
  * Check an account and register a device.
  * @author Pixmon.
  */
-public class LoginTask extends AsyncTask<String, Void, Integer> {
+class AccountInitTask extends AsyncTask<String, Void, Integer> {
     private static final int AUTH_OK = 0;
     private static final int AUTH_FAIL = 1;
     private static final int AUTH_PENDING = 2;
@@ -59,7 +58,7 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
     private final Account[] accounts;
     private Intent authPendingIntent;
     
-    public LoginTask(final Context context) {
+    public AccountInitTask(final Context context) {
         final Context appContext = context.getApplicationContext();
         prefs = appContext.getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
         prefsEditor = prefs.edit();
@@ -122,10 +121,7 @@ public class LoginTask extends AsyncTask<String, Void, Integer> {
                 EventsContract.AUTHORITY, true);
             
             // Start synchronization.
-            final Bundle options = new Bundle();
-            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.FULL_SYNC);
-            ContentResolver.requestSync(new Account(newAccount, GOOGLE_ACCOUNT),
-                EventsContract.AUTHORITY, options);
+            EventsContract.sync(newAccount, EventsContract.FULL_SYNC);
         } else {
             // Restore old account.
             prefsEditor.putString(SP_KEY_ACCOUNT, oldAccount);
