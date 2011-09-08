@@ -9,9 +9,8 @@
     <string name="no_account_available">Aucun compte Google disponible !</string>
     <string name="settings">Paramètres</string>
     <string name="unknown_number">Inconnu</string>
-    <string name="auth_error">Erreur d\'authentification.</string>
+    <string name="auth_error">La connexion a échouée.</string>
     <string name="auth_pending">Connexion en cours...</string>
     <string name="please_wait">Veuillez patienter</string>
     <string name="device_setup_running">Enregistrement de l\'appareil...</string>
-    <string name="device_setup_error">L\'enregistrement de l\'appareil a échoué.</string>
 </resources>

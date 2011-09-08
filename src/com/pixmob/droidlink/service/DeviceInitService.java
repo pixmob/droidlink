@@ -31,7 +31,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -83,13 +82,8 @@ public class DeviceInitService extends AbstractNetworkService {
             InterruptedException {
         // Network connectivity is required for registering to C2DM and
         // uploading device configuration.
-        try {
-            registerC2DM();
-            uploadDeviceConf();
-        } catch (ActionExecutionFailedException e) {
-            showErrorNotification();
-            throw e;
-        }
+        registerC2DM();
+        uploadDeviceConf();
     }
     
     private void generateId() {
@@ -160,14 +154,5 @@ public class DeviceInitService extends AbstractNetworkService {
                 }
             }
         }
-    }
-    
-    private void showErrorNotification() {
-        final Notification nError = new Notification(android.R.drawable.stat_sys_warning,
-                getString(R.string.device_setup_error), System.currentTimeMillis());
-        nError.setLatestEventInfo(this, getString(R.string.app_name),
-            getString(R.string.device_setup_error), openMainActivity);
-        final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        nm.notify(R.string.device_setup_error, nError);
     }
 }
