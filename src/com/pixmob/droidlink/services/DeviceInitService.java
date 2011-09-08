@@ -18,6 +18,7 @@ package com.pixmob.droidlink.services;
 import static com.pixmob.droidlink.Constants.C2DM_SENDER_ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
@@ -25,7 +26,6 @@ import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,6 +46,7 @@ import com.pixmob.droidlink.features.Features;
 import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.ui.EventsActivity;
+import com.pixmob.droidlink.util.DeviceUtils;
 
 /**
  * Initialize this device: generate an unique identifier, register to C2DM,
@@ -92,14 +93,23 @@ public class DeviceInitService extends AbstractNetworkService {
     }
     
     private void generateId() {
-        if (!prefs.contains(SP_KEY_DEVICE_ID)) {
-            final String deviceName = Build.MODEL;
-            Log.i(TAG, "Generating a new identifier for this device (" + deviceName + ")");
-            
-            final String deviceId = UUID.randomUUID().toString();
-            prefsEditor.putString(SP_KEY_DEVICE_ID, deviceId);
+        if (!prefs.contains(SP_KEY_DEVICE_NAME)) {
+            final String deviceName = Build.MANUFACTURER + " " + Build.MODEL;
             prefsEditor.putString(SP_KEY_DEVICE_NAME, deviceName);
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        }
+        
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
+        if (account == null) {
+            Log.i(TAG, "No account set: cannot generate device identifier");
+            return;
+        }
+        
+        if (!prefs.contains(SP_KEY_DEVICE_ID)) {
+            final String deviceId = DeviceUtils.getDeviceId(this, account);
+            Log.i(TAG, "Device identifier generated for " + account + ": " + deviceId);
             
+            prefsEditor.putString(SP_KEY_DEVICE_ID, deviceId);
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         }
     }
