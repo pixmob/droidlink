@@ -22,7 +22,6 @@ import android.content.DialogInterface;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Window;
 
@@ -33,7 +32,7 @@ import com.pixmob.droidlink.util.Accounts;
  * Application entry point, displaying events thanks to {@link EventsFragment}.
  * @author Pixmob
  */
-public class EventsActivity extends FragmentActivity implements EventsFragment.Listener {
+public class EventsActivity extends FragmentActivity {
     private static final int NO_ACCOUNT_AVAILABLE = 1;
     
     @Override
@@ -57,14 +56,6 @@ public class EventsActivity extends FragmentActivity implements EventsFragment.L
     }
     
     @Override
-    public void onAttachFragment(Fragment fragment) {
-        if (fragment instanceof EventsFragment) {
-            final EventsFragment ef = (EventsFragment) fragment;
-            ef.setListener(this);
-        }
-    }
-    
-    @Override
     protected void onResume() {
         super.onResume();
         
@@ -79,15 +70,16 @@ public class EventsActivity extends FragmentActivity implements EventsFragment.L
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE == id) {
             return new AlertDialog.Builder(this).setTitle(R.string.error).setIcon(
-                R.drawable.ic_dialog_alert).setMessage(R.string.no_account_available)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            // There is no Google account on this device:
-                            // the application cannot run.
-                            finish();
-                        }
-                    }).create();
+                R.drawable.ic_dialog_alert).setCancelable(false).setMessage(
+                R.string.no_account_available).setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // There is no Google account on this device:
+                        // the application cannot run.
+                        finish();
+                    }
+                }).create();
         }
         
         return super.onCreateDialog(id);
@@ -98,20 +90,5 @@ public class EventsActivity extends FragmentActivity implements EventsFragment.L
         super.onAttachedToWindow();
         // Enable dithering, ie better gradients.
         getWindow().setFormat(PixelFormat.RGBA_8888);
-    }
-    
-    @Override
-    public void onEventSelected(String eventId) {
-        // TODO Start event details activity.
-    }
-    
-    @Override
-    public void onSynchronizationStart() {
-        setProgressBarIndeterminateVisibility(Boolean.TRUE);
-    }
-    
-    @Override
-    public void onSynchronizationStop() {
-        setProgressBarIndeterminateVisibility(Boolean.FALSE);
     }
 }

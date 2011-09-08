@@ -28,9 +28,6 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
-
-import java.lang.ref.WeakReference;
-
 import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -59,13 +56,8 @@ import com.pixmob.droidlink.provider.EventsContract;
 public class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
     private static final String[] EVENT_COLUMNS = { _ID, CREATED, STATE, NUMBER, NAME, TYPE,
             MESSAGE };
-    private WeakReference<Listener> listenerRef;
     private EventCursorAdapter cursorAdapter;
     private SharedPreferences prefs;
-    
-    public void setListener(Listener listener) {
-        listenerRef = listener == null ? null : new WeakReference<Listener>(listener);
-    }
     
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -142,10 +134,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         final String eventId = (String) v.getTag(EventCursorAdapter.TAG_ID);
         Log.i(TAG, "Opening event details for " + eventId);
         
-        final Listener listener = listenerRef != null ? listenerRef.get() : null;
-        if (listener != null) {
-            listener.onEventSelected(eventId);
-        }
+        // TODO open event details
     }
     
     @Override
@@ -169,26 +158,5 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         cursorAdapter.swapCursor(null);
-    }
-    
-    /**
-     * Listener methods for {@link EventsFragment}.
-     * @author Pixmob
-     */
-    public static interface Listener {
-        /**
-         * This method is called when event synchronization is started.
-         */
-        void onSynchronizationStart();
-        
-        /**
-         * This method is called when event synchronization is stopped.
-         */
-        void onSynchronizationStop();
-        
-        /**
-         * This method is called when an event is selected.
-         */
-        void onEventSelected(String eventId);
     }
 }
