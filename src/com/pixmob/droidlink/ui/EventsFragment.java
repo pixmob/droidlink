@@ -26,6 +26,7 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
 import java.lang.ref.WeakReference;
@@ -56,7 +57,8 @@ import com.pixmob.droidlink.provider.EventsContract;
  * @author Pixmob
  */
 public class EventsFragment extends ListFragment implements LoaderCallbacks<Cursor> {
-    private static final String[] EVENT_COLUMNS = { _ID, CREATED, NUMBER, NAME, TYPE, MESSAGE };
+    private static final String[] EVENT_COLUMNS = { _ID, CREATED, STATE, NUMBER, NAME, TYPE,
+            MESSAGE };
     private WeakReference<Listener> listenerRef;
     private EventCursorAdapter cursorAdapter;
     private SharedPreferences prefs;

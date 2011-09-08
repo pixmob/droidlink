@@ -20,6 +20,7 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
 import java.util.HashMap;
@@ -59,17 +60,18 @@ class EventCursorAdapter extends SimpleCursorAdapter {
     
     @Override
     public void bindView(View v, Context context, Cursor cursor) {
-        final String name = cursor.getString(cursor.getColumnIndex(NAME));
-        final String number = cursor.getString(cursor.getColumnIndex(NUMBER));
-        final long date = cursor.getLong(cursor.getColumnIndex(CREATED));
+        final int state = cursor.getInt(cursor.getColumnIndexOrThrow(STATE));
+        final String name = cursor.getString(cursor.getColumnIndexOrThrow(NAME));
+        final String number = cursor.getString(cursor.getColumnIndexOrThrow(NUMBER));
+        final long date = cursor.getLong(cursor.getColumnIndexOrThrow(CREATED));
         
-        final int type = cursor.getInt(cursor.getColumnIndex(TYPE));
+        final int type = cursor.getInt(cursor.getColumnIndexOrThrow(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
         final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
                 .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
         
-        final String message = cursor.getString(cursor.getColumnIndex(MESSAGE));
+        final String message = cursor.getString(cursor.getColumnIndexOrThrow(MESSAGE));
         
         final String eventName;
         final String eventNumber;
@@ -103,6 +105,9 @@ class EventCursorAdapter extends SimpleCursorAdapter {
         } else {
             iv.setVisibility(View.INVISIBLE);
         }
+        
+        iv = (ImageView) v.findViewById(R.id.event_pending_delete);
+        iv.setVisibility(EventsContract.PENDING_DELETE_STATE == state ? View.VISIBLE : View.GONE);
         
         v.setTag(TAG_ID, cursor.getString(cursor.getColumnIndex(_ID)));
     }
