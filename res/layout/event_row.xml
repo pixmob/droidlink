@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout android:id="@+id/LinearLayout1" xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="?android:attr/listPreferredItemHeight"
     android:minHeight="?android:attr/listPreferredItemHeight" android:paddingLeft="7dip"
     android:paddingRight="5dip" android:gravity="center_vertical" android:orientation="horizontal">
@@ -18,7 +18,7 @@
         android:layout_alignParentRight="true" android:layout_alignWithParentIfMissing="true"
         android:layout_height="wrap_content" android:text="Yesterday" android:textAppearance="?android:attr/textAppearanceSmall"
         android:id="@+id/event_date" android:gravity="right" android:layout_width="wrap_content"
-        android:singleLine="true" android:ellipsize="marquee"></TextView>
+        android:singleLine="true" android:ellipsize="end" android:layout_marginBottom="4dip"></TextView>
     <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:src="@drawable/pending_delete" android:id="@+id/event_pending_delete"
         android:layout_alignParentRight="true" android:layout_marginTop="12dip"></ImageView>
