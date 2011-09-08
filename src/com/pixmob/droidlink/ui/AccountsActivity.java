@@ -37,6 +37,7 @@ public class AccountsActivity extends FragmentActivity {
         actionBar.setCustomView(R.layout.nav);
         actionBar.setDisplayShowCustomEnabled(true);
         actionBar.setDisplayShowHomeEnabled(false);
+        actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
     }
     

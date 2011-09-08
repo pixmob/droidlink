@@ -59,6 +59,7 @@ public class EventsActivity extends FragmentActivity {
         actionBar.setCustomView(R.layout.nav);
         actionBar.setDisplayShowCustomEnabled(true);
         actionBar.setDisplayShowHomeEnabled(false);
+        actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
         
         syncActionReceiver = new SyncActionReceiver();
@@ -90,17 +91,17 @@ public class EventsActivity extends FragmentActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE == id) {
-            return new AlertDialog.Builder(this).setTitle(R.string.error).setIcon(
-                R.drawable.ic_dialog_alert).setCancelable(false).setMessage(
-                R.string.no_account_available).setPositiveButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // There is no Google account on this device:
-                        // the application cannot run.
-                        finish();
-                    }
-                }).create();
+            return new AlertDialog.Builder(this).setTitle(R.string.error)
+                    .setIcon(R.drawable.ic_dialog_alert).setCancelable(false)
+                    .setMessage(R.string.no_account_available)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // There is no Google account on this device:
+                            // the application cannot run.
+                            finish();
+                        }
+                    }).create();
         }
         
         return super.onCreateDialog(id);
