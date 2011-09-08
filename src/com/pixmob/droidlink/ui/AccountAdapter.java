@@ -21,7 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.CheckedTextView;
+import android.widget.TextView;
 
 import com.pixmob.droidlink.R;
 
@@ -30,8 +30,6 @@ import com.pixmob.droidlink.R;
  * @author Pixmob
  */
 class AccountAdapter extends ArrayAdapter<Account> {
-    private String selectedAccount;
-    
     public AccountAdapter(final Activity context, final Account[] objects) {
         super(context, R.layout.account_row, R.id.account_name, objects);
     }
@@ -43,14 +41,9 @@ class AccountAdapter extends ArrayAdapter<Account> {
         row.setTag(row.findViewById(R.id.account_name));
         
         final Account account = getItem(position);
-        final CheckedTextView ctv = (CheckedTextView) row.getTag();
-        ctv.setChecked(account.name.equals(selectedAccount));
+        final TextView ctv = (TextView) row.getTag();
         ctv.setText(account.name);
         
         return row;
-    }
-    
-    public void setSelectedAccount(String selectedAccount) {
-        this.selectedAccount = selectedAccount;
     }
 }

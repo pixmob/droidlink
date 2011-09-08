@@ -15,8 +15,6 @@
  */
 package com.pixmob.droidlink.ui;
 
-import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_WITH_TEXT;
-import static android.view.Menu.NONE;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.accounts.Account;
 import android.app.Activity;
@@ -27,10 +25,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.ListFragment;
-import android.support.v4.view.Menu;
-import android.support.v4.view.MenuItem;
 import android.util.Log;
-import android.view.MenuInflater;
 import android.view.View;
 import android.widget.ListView;
 
@@ -51,7 +46,6 @@ public class AccountsFragment extends ListFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        setHasOptionsMenu(true);
         
         authDialog = AuthDialog.newInstance();
         
@@ -84,28 +78,10 @@ public class AccountsFragment extends ListFragment {
     }
     
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        menu.add(NONE, android.R.string.ok, NONE, android.R.string.ok).setShowAsAction(
-            SHOW_AS_ACTION_WITH_TEXT);
-    }
-    
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.string.ok) {
-            checkAccount();
-            return true;
-        }
-        
-        return super.onOptionsItemSelected(item);
-    }
-    
-    @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         selectedAccount = ((Account) l.getItemAtPosition(position)).name;
-        accountAdapter.setSelectedAccount(selectedAccount);
-        accountAdapter.notifyDataSetInvalidated();
+        checkAccount();
     }
     
     @Override
@@ -120,10 +96,8 @@ public class AccountsFragment extends ListFragment {
     }
     
     private void checkAccount() {
-        if (selectedAccount != null) {
-            task = new InternalAccountInitTask();
-            task.execute(selectedAccount);
-        }
+        task = new InternalAccountInitTask();
+        task.execute(selectedAccount);
     }
     
     /**
@@ -173,6 +147,7 @@ public class AccountsFragment extends ListFragment {
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             final ProgressDialog dialog = new ProgressDialog(getActivity());
+            dialog.setCancelable(false);
             dialog.setMessage(getString(R.string.auth_pending));
             return dialog;
         }
@@ -189,8 +164,9 @@ public class AccountsFragment extends ListFragment {
         
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            return new AlertDialog.Builder(getActivity()).setTitle(R.string.error).setMessage(
-                R.string.auth_error).create();
+            return new AlertDialog.Builder(getActivity()).setTitle(R.string.error).setIcon(
+                R.drawable.ic_dialog_alert).setMessage(R.string.auth_error).setPositiveButton(
+                android.R.string.ok, null).create();
         }
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="wrap_content" android:layout_width="fill_parent"
-    android:checkMark="?android:attr/listChoiceIndicatorSingle"
-    android:gravity="center_vertical" android:id="@+id/account_name">
-</CheckedTextView>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_height="wrap_content"
+    android:layout_width="fill_parent" android:checkMark="?android:attr/listChoiceIndicatorSingle"
+    android:gravity="center_vertical" android:id="@+id/account_name" android:text="john.doe@gmail.com"
+    style="@android:style/TextAppearance.Medium" android:paddingLeft="4dip" android:paddingRight="4dip"
+    android:paddingTop="12dip" android:paddingBottom="12dip">
+</TextView>

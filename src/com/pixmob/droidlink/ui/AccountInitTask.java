@@ -19,6 +19,7 @@ import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
+import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
 import static com.pixmob.droidlink.Constants.TAG;
 
@@ -29,7 +30,6 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -42,6 +42,7 @@ import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.providers.EventsContract;
 import com.pixmob.droidlink.util.Accounts;
+import com.pixmob.droidlink.util.DeviceUtils;
 
 /**
  * Check an account and register a device.
@@ -73,6 +74,12 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         final String newAccount = params[0];
         final String oldAccount = prefs.getString(SP_KEY_ACCOUNT, null);
         
+        // Make sure this user has an unique device identifier.
+        if (!newAccount.equals(oldAccount)) {
+            prefsEditor.putString(SP_KEY_DEVICE_ID, DeviceUtils.getDeviceId(context, newAccount));
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        }
+        
         prefsEditor.putString(SP_KEY_ACCOUNT, newAccount);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
@@ -103,11 +110,9 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         }
         
         if (AUTH_OK == authResult) {
-            if (oldAccount != null && !newAccount.equals(oldAccount)) {
+            if (!newAccount.equals(oldAccount)) {
                 // The user is different: clear events.
-                final ContentValues cv = new ContentValues(1);
-                cv.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
-                contentResolver.update(EventsContract.CONTENT_URI, cv, null, null);
+                contentResolver.delete(EventsContract.CONTENT_URI, null, null);
             }
             
             prefsEditor.putString(SP_KEY_ACCOUNT, newAccount);

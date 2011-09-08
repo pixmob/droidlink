@@ -2,9 +2,9 @@
 <resources>
     <string name="app_name">Droid Link</string>
     <string name="events">Events</string>
-    <string name="account_selection">Select an account</string>
+    <string name="account_selection">Accounts</string>
     <string name="account">User account</string>
-    <string name="select_account">Select an account for connecting your device.</string>
+    <string name="select_account">Select an account for connecting your device:</string>
     <string name="refresh">Refresh</string>
     <string name="ok">OK</string>
     <string name="error">Sorry!</string>

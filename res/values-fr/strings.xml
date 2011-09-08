@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="account_selection">Sélectionner un compte</string>
+    <string name="account_selection">Comptes</string>
     <string name="events">Évènements</string>
     <string name="account">Compte utilisateur</string>
-    <string name="select_account">Sélectionnez un compte pour connecter votre appareil.</string>
+    <string name="select_account">Sélectionnez un compte pour connecter votre appareil :</string>
     <string name="refresh">Actualiser</string>
     <string name="error">Désolé !</string>
     <string name="no_events">Aucun évènement.</string>
+    <string name="no_account_available">Aucun compte Google disponible !</string>
     <string name="settings">Paramètres</string>
     <string name="unknown_number">Inconnu</string>
     <string name="auth_error">Erreur d\'authentification.</string>
