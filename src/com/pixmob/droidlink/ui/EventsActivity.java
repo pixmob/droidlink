@@ -15,10 +15,16 @@
  */
 package com.pixmob.droidlink.ui;
 
+import static com.pixmob.droidlink.Constants.ACTION_SYNC;
+import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
 import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
@@ -34,6 +40,7 @@ import com.pixmob.droidlink.util.Accounts;
  */
 public class EventsActivity extends FragmentActivity {
     private static final int NO_ACCOUNT_AVAILABLE = 1;
+    private SyncActionReceiver syncActionReceiver;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,17 +60,31 @@ public class EventsActivity extends FragmentActivity {
         actionBar.setDisplayShowCustomEnabled(true);
         actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
+        
+        syncActionReceiver = new SyncActionReceiver();
     }
     
     @Override
     protected void onResume() {
         super.onResume();
         
+        final Intent lastSyncIntent = registerReceiver(syncActionReceiver, new IntentFilter(
+                ACTION_SYNC));
+        if (lastSyncIntent != null) {
+            onSyncAction(lastSyncIntent);
+        }
+        
         // Check if there are any Google accounts on this device.
         final Account[] accounts = Accounts.list(this);
         if (accounts.length == 0) {
             showDialog(NO_ACCOUNT_AVAILABLE);
         }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(syncActionReceiver);
     }
     
     @Override
@@ -90,5 +111,19 @@ public class EventsActivity extends FragmentActivity {
         super.onAttachedToWindow();
         // Enable dithering, ie better gradients.
         getWindow().setFormat(PixelFormat.RGBA_8888);
+    }
+    
+    private void onSyncAction(Intent intent) {
+        if (ACTION_SYNC.equals(intent.getAction())) {
+            final boolean running = intent.getBooleanExtra(EXTRA_RUNNING, false);
+            setProgressBarIndeterminateVisibility(Boolean.valueOf(running));
+        }
+    }
+    
+    private class SyncActionReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            onSyncAction(intent);
+        }
     }
 }

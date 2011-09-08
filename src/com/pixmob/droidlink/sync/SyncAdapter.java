@@ -16,7 +16,9 @@
 package com.pixmob.droidlink.sync;
 
 import static android.provider.BaseColumns._ID;
+import static com.pixmob.droidlink.Constants.ACTION_SYNC;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_LAST_SYNC;
@@ -44,6 +46,7 @@ import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
@@ -118,12 +121,22 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             Log.i(TAG, "Performing LIGHT sync");
         }
         
+        // Notify that synchronization is starting.
+        Intent syncIntent = new Intent(ACTION_SYNC);
+        syncIntent.putExtra(EXTRA_RUNNING, true);
+        getContext().sendStickyBroadcast(syncIntent);
+        
         try {
             doPerformSync(client, prefs, provider, syncResult, fullSync);
         } finally {
             client.close();
+            
+            // Notify synchronization end.
+            syncIntent.putExtra(EXTRA_RUNNING, false);
+            getContext().sendStickyBroadcast(syncIntent);
+            
+            Log.i(TAG, "Synchronization done for user " + accountName);
         }
-        Log.i(TAG, "Synchronization done for user " + accountName);
     }
     
     private void doPerformSync(NetworkClient client, SharedPreferences prefs,

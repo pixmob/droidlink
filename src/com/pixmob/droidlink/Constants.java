@@ -59,8 +59,8 @@ public final class Constants {
     public static final String C2DM_MESSAGE_SYNC = "sync";
     public static final String C2DM_ACCOUNT_EXTRA = "account";
     
-    public static final String ACTION_LOGIN = "com.pixmob.droidlink.login";
-    public static final String EXTRA_ACCOUNT = "account";
+    public static final String ACTION_SYNC = "com.pixmob.droidlink.sync";
+    public static final String EXTRA_RUNNING = "running";
     
     /**
      * Google account type.
