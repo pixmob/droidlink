@@ -74,6 +74,7 @@ public class EventsContract {
         
         final Bundle options = new Bundle();
         options.putInt(EventsContract.SYNC_STRATEGY, syncType);
+        options.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT), EventsContract.AUTHORITY,
             options);
     }
