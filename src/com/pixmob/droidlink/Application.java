@@ -15,12 +15,12 @@
  */
 package com.pixmob.droidlink;
 
+import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import android.content.Intent;
 
 import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.StrictModeFeature;
-import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * Application entry point.
@@ -37,6 +37,6 @@ public class Application extends android.app.Application {
         }
         
         // Make sure a device id is generated for this device.
-        startService(new Intent(this, DeviceInitService.class));
+        startService(new Intent(ACTION_INIT));
     }
 }

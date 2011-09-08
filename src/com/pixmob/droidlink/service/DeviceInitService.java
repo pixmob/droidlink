@@ -17,12 +17,12 @@ package com.pixmob.droidlink.service;
 
 import static com.pixmob.droidlink.Constants.C2DM_SENDER_ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.EXTRA_FORCE_UPLOAD;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_C2DM;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_NAME;
-import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_SYNC_REQUIRED;
 import static com.pixmob.droidlink.Constants.TAG;
 
 import java.io.IOException;
@@ -53,6 +53,7 @@ import com.pixmob.droidlink.util.DeviceUtils;
  * @author Pixmob
  */
 public class DeviceInitService extends AbstractNetworkService {
+    private static final String SP_KEY_UPLOAD_DONE = "uploadDone";
     private PendingIntent openMainActivity;
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
@@ -83,7 +84,12 @@ public class DeviceInitService extends AbstractNetworkService {
         // Network connectivity is required for registering to C2DM and
         // uploading device configuration.
         registerC2DM();
-        uploadDeviceConf();
+        
+        final boolean upload = intent.getBooleanExtra(EXTRA_FORCE_UPLOAD, false)
+                || !prefs.getBoolean(SP_KEY_UPLOAD_DONE, false);
+        if (upload) {
+            uploadDeviceConf();
+        }
     }
     
     private void generateId() {
@@ -115,43 +121,40 @@ public class DeviceInitService extends AbstractNetworkService {
     }
     
     private void uploadDeviceConf() throws ActionExecutionFailedException {
-        final boolean syncRequired = prefs.getBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
-        if (syncRequired) {
-            final String deviceName = prefs.getString(SP_KEY_DEVICE_NAME, null);
-            final String deviceC2dm = prefs.getString(SP_KEY_DEVICE_C2DM, null);
+        final String deviceName = prefs.getString(SP_KEY_DEVICE_NAME, null);
+        final String deviceC2dm = prefs.getString(SP_KEY_DEVICE_C2DM, null);
+        
+        final NetworkClient client = NetworkClient.newInstance(this);
+        if (client != null) {
+            final Notification n = new Notification(android.R.drawable.stat_notify_sync,
+                    getString(R.string.device_setup_running), System.currentTimeMillis());
+            n.setLatestEventInfo(this, getString(R.string.app_name),
+                getString(R.string.device_setup_running), openMainActivity);
+            startForeground(R.string.device_setup_running, n);
             
-            final NetworkClient client = NetworkClient.newInstance(this);
-            if (client != null) {
-                final Notification n = new Notification(android.R.drawable.stat_notify_sync,
-                        getString(R.string.device_setup_running), System.currentTimeMillis());
-                n.setLatestEventInfo(this, getString(R.string.app_name),
-                    getString(R.string.device_setup_running), openMainActivity);
-                startForeground(R.string.device_setup_running, n);
+            try {
+                final JSONObject data = new JSONObject();
+                data.put("name", deviceName);
+                data.put("c2dm", deviceC2dm);
                 
-                try {
-                    final JSONObject data = new JSONObject();
-                    data.put("name", deviceName);
-                    data.put("c2dm", deviceC2dm);
-                    
-                    if (DEVELOPER_MODE) {
-                        Log.i(TAG, "Initializing device " + client.getDeviceId() + ": name="
-                                + deviceName + ", c2dm=" + deviceC2dm);
-                    }
-                    client.put("/device/" + client.getDeviceId(), data);
-                    
-                    prefsEditor.putBoolean(SP_KEY_DEVICE_SYNC_REQUIRED, false);
-                    Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
-                } catch (JSONException e) {
-                    throw new ActionExecutionFailedException("JSON error: cannot init device", e);
-                } catch (IOException e) {
-                    throw new ActionExecutionFailedException("I/O error: cannot init device", e);
-                } catch (AppEngineAuthenticationException e) {
-                    throw new ActionExecutionFailedException(
-                            "Authentication error: cannot init device", e);
-                } finally {
-                    client.close();
-                    stopForeground(true);
+                if (DEVELOPER_MODE) {
+                    Log.i(TAG, "Initializing device " + client.getDeviceId() + ": name="
+                            + deviceName + ", c2dm=" + deviceC2dm);
                 }
+                client.put("/device/" + client.getDeviceId(), data);
+                
+                prefsEditor.putBoolean(SP_KEY_UPLOAD_DONE, true);
+                Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+            } catch (JSONException e) {
+                throw new ActionExecutionFailedException("JSON error: cannot init device", e);
+            } catch (IOException e) {
+                throw new ActionExecutionFailedException("I/O error: cannot init device", e);
+            } catch (AppEngineAuthenticationException e) {
+                throw new ActionExecutionFailedException(
+                        "Authentication error: cannot init device", e);
+            } finally {
+                client.close();
+                stopForeground(true);
             }
         }
     }

@@ -16,8 +16,10 @@
 package com.pixmob.droidlink.sync;
 
 import static android.provider.BaseColumns._ID;
+import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.ACTION_SYNC;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.EXTRA_FORCE_UPLOAD;
 import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
@@ -141,6 +143,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     
     private void doPerformSync(NetworkClient client, SharedPreferences prefs,
             ContentProviderClient provider, SyncResult syncResult, boolean fullSync) {
+        // Check if the device exists on the remote server.
+        try {
+            client.get("/device/" + client.getDeviceId());
+        } catch (IOException e) {
+            Log.w(TAG, "I/O error: cannot sync", e);
+            syncResult.stats.numIoExceptions++;
+            
+            registerDevice();
+            return;
+        } catch (AppEngineAuthenticationException e) {
+            Log.e(TAG, "Authentication error: cannot sync", e);
+            syncResult.stats.numAuthExceptions++;
+            return;
+        }
+        
         // Prepare the query.
         final String selection = DEVICE_ID + "=? AND " + STATE + "=? OR " + STATE + "=?";
         final String[] selectionArgs = { client.getDeviceId(),
@@ -190,7 +207,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (RemoteException e) {
             Log.e(TAG, "Failed to get events: cannot sync", e);
             syncResult.stats.numIoExceptions++;
-            return;
         } finally {
             if (c != null) {
                 c.close();
@@ -232,6 +248,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             } catch (IOException e) {
                 Log.w(TAG, "Event deletion error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
+                return;
             } catch (AppEngineAuthenticationException e) {
                 Log.e(TAG, "Authentication error: cannot sync", e);
                 syncResult.stats.numAuthExceptions++;
@@ -305,13 +322,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 
                 // Build a collection with local event identifiers.
                 // This collection will be used to identify which events have
-                // been
-                // deleted on the remote server.
+                // been deleted on the remote server.
                 final Set<String> localEventIds;
                 try {
                     c = provider.query(EventsContract.CONTENT_URI, PROJECTION_ID, DEVICE_ID
-                            + "=? AND " + STATE + "=?", new String[] { deviceId,
-                            String.valueOf(EventsContract.UPLOADED_STATE) }, null);
+                            + "=? AND " + STATE + "=?",
+                        new String[] { deviceId, String.valueOf(EventsContract.UPLOADED_STATE) },
+                        null);
                     localEventIds = new HashSet<String>(c.getCount());
                     
                     final int idIdx = c.getColumnIndexOrThrow(_ID);
@@ -373,8 +390,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         
                         // This event now exists in the local database:
                         // remove its identifier from this collection as we
-                        // don't
-                        // want to delete it.
+                        // don't want to delete it.
                         localEventIds.remove(eventId);
                     } catch (JSONException e) {
                         Log.w(TAG, "Invalid event at index " + i + ": cannot sync", e);
@@ -387,10 +403,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
                 
                 // The remaining event identifiers was removed on the remote
-                // server:
-                // there are still present in the local database. These events
-                // are
-                // now being deleted.
+                // server: there are still present in the local database. These
+                // events are now being deleted.
                 for (final String eventId : localEventIds) {
                     if (DEVELOPER_MODE) {
                         Log.d(TAG, "Deleting event in local database: " + eventId);
@@ -457,6 +471,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         final SharedPreferences.Editor prefsEditor = prefs.edit();
         prefsEditor.putLong(SP_KEY_LAST_SYNC, System.currentTimeMillis());
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+    }
+    
+    private void registerDevice() {
+        final Intent i = new Intent(ACTION_INIT);
+        i.putExtra(EXTRA_FORCE_UPLOAD, true);
+        getContext().startService(i);
     }
     
     /**
