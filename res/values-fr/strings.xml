@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="account_selection">Comptes</string>
-    <string name="events">Évènements</string>
     <string name="account">Compte utilisateur</string>
     <string name="select_account">Sélectionnez un compte pour connecter votre appareil :</string>
     <string name="refresh">Actualiser</string>

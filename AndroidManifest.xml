@@ -23,8 +23,7 @@
     <application android:icon="@drawable/icon" android:label="@string/app_name"
         android:theme="@android:style/Theme.Black" android:name=".Application"
         android:hardwareAccelerated="true">
-        <activity android:name=".ui.EventsActivity" android:label="@string/events"
-            android:theme="@style/Theme.Sherlock">
+        <activity android:name=".ui.EventsActivity" android:theme="@style/Theme.Sherlock">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
