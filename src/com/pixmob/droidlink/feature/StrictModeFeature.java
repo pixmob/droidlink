@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.features;
-
-import android.content.SharedPreferences.Editor;
+package com.pixmob.droidlink.feature;
 
 /**
- * Gingerbread {@link SharedPreferencesSaverFeature} implementation.
+ * Compatibility interface for enabling the <tt>StrictMode</tt> feature.
  * @author Pixmob
  */
-class GingerbreadSharedPreferencesSaverFeature implements SharedPreferencesSaverFeature {
-    @Override
-    public void save(Editor prefsEditor) {
-        prefsEditor.apply();
-    }
+public interface StrictModeFeature {
+    /**
+     * Enable the <tt>StrictMode</tt> feature, if it's available.
+     */
+    void enable();
 }

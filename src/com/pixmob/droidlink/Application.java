@@ -18,9 +18,9 @@ package com.pixmob.droidlink;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import android.content.Intent;
 
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.StrictModeFeature;
-import com.pixmob.droidlink.services.DeviceInitService;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.StrictModeFeature;
+import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * Application entry point.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.receivers;
+package com.pixmob.droidlink.receiver;
 
 import static com.pixmob.droidlink.Constants.TAG;
 import android.content.BroadcastReceiver;
@@ -23,7 +23,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
-import com.pixmob.droidlink.services.DeviceInitService;
+import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * When the network becomes available, the device configuration initialization

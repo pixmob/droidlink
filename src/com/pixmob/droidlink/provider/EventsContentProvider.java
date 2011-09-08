@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.providers;
+package com.pixmob.droidlink.provider;
 
 import static android.provider.BaseColumns._ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContract.Event.CONTENT_ITEM_TYPE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.CONTENT_TYPE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
-import static com.pixmob.droidlink.providers.EventsContract.Event.DEFAULT_SORT_ORDER;
-import static com.pixmob.droidlink.providers.EventsContract.Event.DEVICE_ID;
-import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
-import static com.pixmob.droidlink.providers.EventsContract.Event.STATE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.CONTENT_ITEM_TYPE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.CONTENT_TYPE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.provider.EventsContract.Event.DEFAULT_SORT_ORDER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.DEVICE_ID;
+import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
 import java.util.UUID;
 

@@ -7,8 +7,8 @@ import java.util.UUID;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 
 /**
  * Device utilities.

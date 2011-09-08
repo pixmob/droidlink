@@ -13,15 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.features;
+package com.pixmob.droidlink.feature;
+
+import android.os.StrictMode;
 
 /**
- * Legacy {@link StrictModeFeature} implementation.
+ * Gingerbread {@link StrictModeFeature} implementation.
  * @author Pixmob
  */
-class LegacyStrictModeFeature implements StrictModeFeature {
+class GingerbreadStrictModeFeature implements StrictModeFeature {
     @Override
     public void enable() {
-        // Do nothing.
+        final StrictMode.ThreadPolicy threadPolicy = new StrictMode.ThreadPolicy.Builder()
+                .detectDiskWrites().detectNetwork().penaltyLog().build();
+        final StrictMode.VmPolicy vmPolicy = new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects().penaltyLog().build();
+        
+        StrictMode.setThreadPolicy(threadPolicy);
+        StrictMode.setVmPolicy(vmPolicy);
     }
 }

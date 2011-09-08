@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.services;
+package com.pixmob.droidlink.service;
 
 import static com.pixmob.droidlink.Constants.C2DM_SENDER_ID;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
@@ -42,8 +42,8 @@ import com.google.android.c2dm.C2DMessaging;
 import com.pixmob.actionservice.ActionExecutionFailedException;
 import com.pixmob.appengine.client.AppEngineAuthenticationException;
 import com.pixmob.droidlink.R;
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.ui.EventsActivity;
 import com.pixmob.droidlink.util.DeviceUtils;

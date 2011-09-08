@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.providers;
+package com.pixmob.droidlink.provider;
 
 import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import android.accounts.Account;

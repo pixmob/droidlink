@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.services;
+package com.pixmob.droidlink.service;
 
 import static com.pixmob.droidlink.Constants.TAG;
 import android.content.Intent;

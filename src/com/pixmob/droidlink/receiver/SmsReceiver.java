@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.receivers;
+package com.pixmob.droidlink.receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.pixmob.droidlink.services.SmsHandlerService;
+import com.pixmob.droidlink.service.SmsHandlerService;
 
 /**
  * When a message is received, this receiver is notified: the message is stored

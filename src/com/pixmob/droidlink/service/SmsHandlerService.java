@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.services;
+package com.pixmob.droidlink.service;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
-import static com.pixmob.droidlink.providers.EventsContract.Event.DEVICE_ID;
-import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
-import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.provider.EventsContract.Event.DEVICE_ID;
+import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -37,7 +37,7 @@ import android.util.Log;
 
 import com.pixmob.actionservice.ActionExecutionFailedException;
 import com.pixmob.actionservice.ActionService;
-import com.pixmob.droidlink.providers.EventsContract;
+import com.pixmob.droidlink.provider.EventsContract;
 import com.pixmob.droidlink.util.PhoneUtils;
 
 /**

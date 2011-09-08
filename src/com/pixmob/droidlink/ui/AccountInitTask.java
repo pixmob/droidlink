@@ -29,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -37,10 +38,10 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.pixmob.appengine.client.AppEngineAuthenticationException;
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
-import com.pixmob.droidlink.providers.EventsContract;
+import com.pixmob.droidlink.provider.EventsContract;
 import com.pixmob.droidlink.util.Accounts;
 import com.pixmob.droidlink.util.DeviceUtils;
 
@@ -52,21 +53,21 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
     private static final int AUTH_OK = 0;
     private static final int AUTH_FAIL = 1;
     private static final int AUTH_PENDING = 2;
-    private final Context context;
+    private final AccountsFragment fragment;
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
     private final ContentResolver contentResolver;
     private final Account[] accounts;
     private Intent authPendingIntent;
     
-    public AccountInitTask(final Context context) {
-        final Context appContext = context.getApplicationContext();
-        prefs = appContext.getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
-        prefsEditor = prefs.edit();
-        contentResolver = appContext.getContentResolver();
-        accounts = Accounts.list(appContext);
+    public AccountInitTask(final AccountsFragment fragment) {
+        this.fragment = fragment;
         
-        this.context = appContext;
+        final Activity context = fragment.getActivity();
+        prefs = context.getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+        prefsEditor = prefs.edit();
+        contentResolver = context.getContentResolver();
+        accounts = Accounts.list(context);
     }
     
     @Override
@@ -76,14 +77,15 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         
         // Make sure this user has an unique device identifier.
         if (!newAccount.equals(oldAccount)) {
-            prefsEditor.putString(SP_KEY_DEVICE_ID, DeviceUtils.getDeviceId(context, newAccount));
+            prefsEditor.putString(SP_KEY_DEVICE_ID, DeviceUtils.getDeviceId(fragment.getActivity(),
+                newAccount));
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         }
         
         prefsEditor.putString(SP_KEY_ACCOUNT, newAccount);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
-        final NetworkClient client = NetworkClient.newInstance(context);
+        final NetworkClient client = NetworkClient.newInstance(fragment.getActivity());
         
         int authResult = AUTH_FAIL;
         if (client != null) {

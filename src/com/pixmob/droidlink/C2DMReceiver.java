@@ -38,10 +38,10 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.c2dm.C2DMBaseReceiver;
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
-import com.pixmob.droidlink.providers.EventsContract;
-import com.pixmob.droidlink.services.DeviceInitService;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.provider.EventsContract;
+import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * Handle C2DM events.

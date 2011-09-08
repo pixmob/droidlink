@@ -22,11 +22,11 @@ import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
-import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
-import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
 import java.lang.ref.WeakReference;
 
@@ -49,7 +49,7 @@ import android.view.View;
 import android.widget.ListView;
 
 import com.pixmob.droidlink.R;
-import com.pixmob.droidlink.providers.EventsContract;
+import com.pixmob.droidlink.provider.EventsContract;
 
 /**
  * Fragment for displaying device events.

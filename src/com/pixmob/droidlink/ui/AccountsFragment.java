@@ -107,7 +107,7 @@ public class AccountsFragment extends ListFragment {
      */
     private class InternalAccountInitTask extends AccountInitTask {
         public InternalAccountInitTask() {
-            super(getActivity());
+            super(AccountsFragment.this);
         }
         
         @Override

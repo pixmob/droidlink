@@ -16,11 +16,11 @@
 package com.pixmob.droidlink.ui;
 
 import static android.provider.BaseColumns._ID;
-import static com.pixmob.droidlink.providers.EventsContract.Event.CREATED;
-import static com.pixmob.droidlink.providers.EventsContract.Event.MESSAGE;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NAME;
-import static com.pixmob.droidlink.providers.EventsContract.Event.NUMBER;
-import static com.pixmob.droidlink.providers.EventsContract.Event.TYPE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
+import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
+import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
+import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +36,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.pixmob.droidlink.R;
-import com.pixmob.droidlink.providers.EventsContract;
+import com.pixmob.droidlink.provider.EventsContract;
 
 /**
  * Data source for device events.

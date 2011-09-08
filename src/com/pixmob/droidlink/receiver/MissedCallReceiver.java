@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pixmob.droidlink.receivers;
+package com.pixmob.droidlink.receiver;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.TAG;
@@ -25,9 +25,9 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.pixmob.droidlink.Constants;
-import com.pixmob.droidlink.features.Features;
-import com.pixmob.droidlink.features.SharedPreferencesSaverFeature;
-import com.pixmob.droidlink.services.MissedCallHandlerService;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
+import com.pixmob.droidlink.service.MissedCallHandlerService;
 
 /**
  * When a call is received, this receiver is notified. If the call was not
