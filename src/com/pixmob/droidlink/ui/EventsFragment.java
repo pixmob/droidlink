@@ -85,7 +85,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         menu.add(NONE, R.string.account_selection, NONE, R.string.account_selection).setIcon(
             R.drawable.ic_menu_login);
         menu.add(NONE, R.string.settings, NONE, R.string.settings).setIcon(
-            R.drawable.ic_menu_preferences);
+            android.R.drawable.ic_menu_preferences);
     }
     
     @Override
