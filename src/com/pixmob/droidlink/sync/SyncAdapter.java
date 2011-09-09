@@ -145,7 +145,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             ContentProviderClient provider, SyncResult syncResult, boolean fullSync) {
         // Check if the device exists on the remote server.
         try {
-            client.get("/device/" + client.getDeviceId());
+            client.getAsArray("/device/" + client.getDeviceId());
         } catch (IOException e) {
             Log.w(TAG, "I/O error: cannot sync", e);
             syncResult.stats.numIoExceptions++;
