@@ -75,8 +75,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     protected void onResume() {
         super.onResume();
         
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
         final Preference userAccountPref = getPreferenceManager().findPreference(USER_ACCOUNT_PREF);
-        userAccountPref.setSummary(prefs.getString(SP_KEY_ACCOUNT, null));
+        userAccountPref.setSummary(account);
+        
+        final Preference deleteDataPref = getPreferenceManager().findPreference(DELETE_DATA_PREF);
+        deleteDataPref.setEnabled(account != null);
     }
     
     private static void configure(PreferencesActivity activity) {
@@ -123,9 +127,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             final String account = prefs.getString(SP_KEY_ACCOUNT, null);
-                            if (account != null) {
-                                new EventPurgeTask(account, getContentResolver()).start();
-                            }
+                            new EventPurgeTask(account, getContentResolver()).start();
                         }
                     }).setNegativeButton(android.R.string.cancel, null).create();
         }
@@ -164,8 +166,10 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
             values.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
             contentResolver.update(EventsContract.CONTENT_URI, values, null, null);
             
-            // The deletion is done when the synchronization is started.
-            EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+            if (account != null) {
+                // The deletion is done when the synchronization is started.
+                EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+            }
         }
     }
     
