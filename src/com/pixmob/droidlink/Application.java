@@ -18,8 +18,6 @@ package com.pixmob.droidlink;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
-import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_MISSED_CALLS;
-import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import android.accounts.Account;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -44,19 +42,15 @@ public class Application extends android.app.Application {
             Features.getFeature(StrictModeFeature.class).enable();
         }
         
-        // Set default values for preferences.
-        final SharedPreferences prefs = getSharedPreferences(SHARED_PREFERENCES_FILE, MODE_PRIVATE);
-        final SharedPreferences.Editor prefsEditor = prefs.edit();
-        prefsEditor.putBoolean(SP_KEY_IGNORE_MISSED_CALLS, true);
-        prefsEditor.putBoolean(SP_KEY_IGNORE_RECEIVED_SMS, true);
-        
         // If there is only one account, select it.
         final Account[] accounts = Accounts.list(this);
         if (accounts.length == 1) {
+            final SharedPreferences prefs = getSharedPreferences(SHARED_PREFERENCES_FILE,
+                MODE_PRIVATE);
+            final SharedPreferences.Editor prefsEditor = prefs.edit();
             prefsEditor.putString(SP_KEY_ACCOUNT, accounts[0].name);
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         }
-        
-        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
         // Make sure a device id is generated for this device.
         startService(new Intent(this, DeviceInitService.class));
