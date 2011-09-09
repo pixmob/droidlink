@@ -15,6 +15,8 @@
  */
 package com.pixmob.droidlink.net;
 
+import static com.pixmob.droidlink.Constants.APPLICATION_NAME;
+import static com.pixmob.droidlink.Constants.APPLICATION_VERSION;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.REMOTE_API_VERSION;
 import static com.pixmob.droidlink.Constants.SERVER_HOST;
@@ -22,7 +24,6 @@ import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.TAG;
-import static com.pixmob.droidlink.Constants.USER_AGENT;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -46,6 +47,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -90,9 +92,14 @@ public class NetworkClient {
         
         final AppEngineClient gaeClient = new AppEngineClient(context, SERVER_HOST);
         gaeClient.setAccount(account);
-        gaeClient.setHttpUserAgent(USER_AGENT);
+        gaeClient.setHttpUserAgent(generateUserAgent(context));
         
         return new NetworkClient(gaeClient, account, deviceId);
+    }
+    
+    private static final String generateUserAgent(Context context) {
+        return APPLICATION_NAME + "/" + APPLICATION_VERSION + " (" + Build.MANUFACTURER + " "
+                + Build.MODEL + " on Android " + Build.VERSION.SDK_INT;
     }
     
     public String getDeviceId() {

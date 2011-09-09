@@ -25,9 +25,13 @@ public final class Constants {
      */
     public static final String SERVER_HOST = "mydroidlink.appspot.com";
     /**
-     * HTTP User Agent.
+     * Application name.
      */
-    public static final String USER_AGENT = "Droid Link";
+    public static final String APPLICATION_NAME = "Droid Link";
+    /**
+     * Application version.
+     */
+    public static final String APPLICATION_VERSION = "1.0";
     /**
      * Remote API version.
      */
