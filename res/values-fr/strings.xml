@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="account_selection">Comptes</string>
-    <string name="account">Compte utilisateur</string>
     <string name="select_account">Sélectionnez un compte pour connecter votre appareil :</string>
     <string name="refresh">Actualiser</string>
     <string name="error">Désolé !</string>
@@ -13,4 +12,10 @@
     <string name="auth_pending">Connexion en cours...</string>
     <string name="please_wait">Veuillez patienter</string>
     <string name="device_setup_running">Enregistrement de l\'appareil...</string>
+    <string name="events_on_this_device">Evènements sur cet appareil</string>
+    <string name="ignore_missed_calls">Ignorer appels manqués</string>
+    <string name="ignore_received_sms">Ignorer SMS reçus</string>
+    <string name="admin">Administration</string>
+    <string name="delete_data">Effacer toutes les données</string>
+    <string name="confirm_delete_data">Toutes les données associées au compte seront supprimées.</string>
 </resources>

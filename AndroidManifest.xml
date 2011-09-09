@@ -31,7 +31,8 @@
         </activity>
         <activity android:name=".ui.AccountsActivity" android:label="@string/account_selection"
             android:theme="@style/Theme.Sherlock"></activity>
-        <activity android:name=".ui.PreferencesActivity"></activity>
+        <activity android:name=".ui.PreferencesActivity" android:label="@string/settings"
+            android:theme="@style/Theme.Sherlock"></activity>
 
         <receiver android:name=".receiver.SmsReceiver">
             <intent-filter android:priority="100">

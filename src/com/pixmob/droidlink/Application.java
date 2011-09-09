@@ -17,9 +17,14 @@ package com.pixmob.droidlink;
 
 import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_MISSED_CALLS;
+import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import android.content.Intent;
+import android.content.SharedPreferences;
 
 import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.feature.StrictModeFeature;
 
 /**
@@ -38,5 +43,12 @@ public class Application extends android.app.Application {
         
         // Make sure a device id is generated for this device.
         startService(new Intent(ACTION_INIT));
+        
+        // Set default values for preferences.
+        final SharedPreferences prefs = getSharedPreferences(SHARED_PREFERENCES_FILE, MODE_PRIVATE);
+        final SharedPreferences.Editor prefsEditor = prefs.edit();
+        prefsEditor.putBoolean(SP_KEY_IGNORE_MISSED_CALLS, true);
+        prefsEditor.putBoolean(SP_KEY_IGNORE_RECEIVED_SMS, true);
+        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
     }
 }

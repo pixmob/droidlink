@@ -15,40 +15,154 @@
  */
 package com.pixmob.droidlink.ui;
 
+import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
-
-import java.util.Arrays;
-
-import android.accounts.Account;
+import static com.pixmob.droidlink.Constants.TAG;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
-import android.preference.ListPreference;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.preference.Preference.OnPreferenceClickListener;
+import android.util.Log;
 
 import com.pixmob.droidlink.R;
-import com.pixmob.droidlink.util.Accounts;
+import com.pixmob.droidlink.provider.EventsContract;
 
 /**
  * Application preferences.
  * @author Pixmob
  */
-public class PreferencesActivity extends PreferenceActivity {
+public class PreferencesActivity extends PreferenceActivity implements OnPreferenceClickListener {
+    private static final String DELETE_DATA_PREF = "deleteData";
+    private static final int DELETE_DATA_CONFIRM_DIALOG = 1;
+    private SharedPreferences prefs;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.preferences);
         
-        final Account[] accounts = Accounts.list(this);
-        final String[] accountNames = new String[accounts.length];
-        for (int i = 0; i < accounts.length; ++i) {
-            accountNames[i] = accounts[i].name;
+        final PreferenceManager pm = getPreferenceManager();
+        pm.setSharedPreferencesMode(Context.MODE_PRIVATE);
+        pm.setSharedPreferencesName(SHARED_PREFERENCES_FILE);
+        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+            // Use a regular preference screen for Android systems < Honeycomb.
+            addPreferencesFromResource(R.xml.preferences);
+            configure(this);
+        } else {
+            // Use a fragment for Honeycomb+ systems.
+            PreferencesInitializer.init(this);
         }
-        Arrays.sort(accountNames);
+    }
+    
+    private static void configure(PreferencesActivity activity) {
+        final PreferenceManager pm = activity.getPreferenceManager();
+        activity.prefs = pm.getSharedPreferences();
         
-        final PreferenceManager prefManager = getPreferenceManager();
-        final ListPreference accountPref = (ListPreference) prefManager
-                .findPreference(SP_KEY_ACCOUNT);
-        accountPref.setEntries(accountNames);
-        accountPref.setEntryValues(accountNames);
+        final Preference purgeEventsPref = pm.findPreference(DELETE_DATA_PREF);
+        purgeEventsPref.setOnPreferenceClickListener(activity);
+    }
+    
+    @Override
+    public boolean onPreferenceClick(Preference preference) {
+        if (DELETE_DATA_PREF.equals(preference.getKey())) {
+            showDialog(DELETE_DATA_CONFIRM_DIALOG);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        if (DELETE_DATA_CONFIRM_DIALOG == id) {
+            return new AlertDialog.Builder(this).setIcon(android.R.drawable.ic_dialog_info)
+                    .setTitle(R.string.delete_data).setMessage(R.string.confirm_delete_data)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            final String account = prefs.getString(SP_KEY_ACCOUNT, null);
+                            if (account != null) {
+                                new EventPurgeTask(account, getContentResolver()).start();
+                            }
+                        }
+                    }).setNegativeButton(android.R.string.cancel, null).create();
+        }
+        
+        return super.onCreateDialog(id);
+    }
+    
+    /**
+     * Internal task for updating events for deletion.
+     * @author Pixmob
+     */
+    private static class EventPurgeTask extends Thread {
+        private final String account;
+        private final ContentResolver contentResolver;
+        
+        public EventPurgeTask(final String account, final ContentResolver contentResolver) {
+            super("DroidLink/EventPurge");
+            this.account = account;
+            this.contentResolver = contentResolver;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                doRun();
+            } catch (Exception e) {
+                Log.w(TAG, "Event purge error", e);
+            }
+        }
+        
+        private void doRun() throws Exception {
+            Log.i(TAG, "Delete data");
+            
+            // Events are updated for deletion.
+            final ContentValues values = new ContentValues();
+            values.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
+            contentResolver.update(EventsContract.CONTENT_URI, values, null, null);
+            
+            // The deletion is done when the synchronization is started.
+            EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+        }
+    }
+    
+    /**
+     * Internal class for setting a fragment for preferences.
+     * @author Pixmob
+     */
+    private static class PreferencesInitializer {
+        public static void init(PreferencesActivity activity) {
+            final ApplicationPreferencesFragment fragment = new ApplicationPreferencesFragment();
+            
+            final FragmentTransaction ft = activity.getFragmentManager().beginTransaction();
+            ft.add(fragment, "preferences");
+            ft.commit();
+        }
+    }
+    
+    /**
+     * {@link Fragment} for application preferences.
+     * @author Pixmob
+     */
+    public static class ApplicationPreferencesFragment extends PreferenceFragment {
+        public ApplicationPreferencesFragment() {
+            addPreferencesFromResource(R.xml.preferences);
+            
+            final PreferencesActivity activity = (PreferencesActivity) getActivity();
+            PreferencesActivity.configure(activity);
+        }
     }
 }

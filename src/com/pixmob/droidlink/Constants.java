@@ -50,7 +50,8 @@ public final class Constants {
     
     public static final String SHARED_PREFERENCES_FILE = "sharedprefs";
     public static final String SP_KEY_ACCOUNT = "account";
-    public static final String SP_KEY_ENABLED = "enabled";
+    public static final String SP_KEY_IGNORE_RECEIVED_SMS = "ignoreReceivedSms";
+    public static final String SP_KEY_IGNORE_MISSED_CALLS = "ignoreMissedCalls";
     public static final String SP_KEY_DEVICE_ID = "deviceId";
     public static final String SP_KEY_DEVICE_NAME = "deviceName";
     public static final String SP_KEY_DEVICE_C2DM = "deviceC2dm";

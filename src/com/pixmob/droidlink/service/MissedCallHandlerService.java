@@ -19,6 +19,7 @@ import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
+import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_MISSED_CALLS;
 import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.DEVICE_ID;
@@ -64,6 +65,11 @@ public class MissedCallHandlerService extends ActionService {
     @Override
     protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
+        if (prefs.getBoolean(SP_KEY_IGNORE_MISSED_CALLS, true)) {
+            Log.i(TAG, "Ignore missed call");
+            return;
+        }
+        
         // Wait some time to ensure the missed call is written to the call log.
         SystemClock.sleep(1000);
         

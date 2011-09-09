@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <ListPreference android:key="account" android:dialogTitle="@string/account_selection"
-        android:title="@string/account"></ListPreference>
+    <PreferenceCategory android:title="@string/events_on_this_device">
+        <CheckBoxPreference android:title="@string/ignore_missed_calls"
+            android:key="ignoreMissedCalls"></CheckBoxPreference>
+        <CheckBoxPreference android:title="@string/ignore_received_sms"
+            android:key="ignoreReceivedSms"></CheckBoxPreference>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/admin">
+        <Preference android:key="deleteData" android:title="@string/delete_data"></Preference>
+    </PreferenceCategory>
 </PreferenceScreen>

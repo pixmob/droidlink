@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">Droid Link</string>
     <string name="account_selection">Accounts</string>
-    <string name="account">User account</string>
     <string name="select_account">Select an account for connecting your device:</string>
     <string name="refresh">Refresh</string>
     <string name="error">Sorry!</string>
@@ -14,4 +13,10 @@
     <string name="auth_pending">Authenticating...</string>
     <string name="please_wait">Please wait</string>
     <string name="device_setup_running">Registering device...</string>
+    <string name="events_on_this_device">Events</string>
+    <string name="ignore_missed_calls">Ignore missed calls</string>
+    <string name="ignore_received_sms">Ignore received SMS</string>
+    <string name="admin">Administration</string>
+    <string name="delete_data">Delete database</string>
+    <string name="confirm_delete_data">All data will be deleted.</string>
 </resources>

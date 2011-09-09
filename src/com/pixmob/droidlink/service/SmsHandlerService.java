@@ -19,6 +19,7 @@ import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
+import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.DEVICE_ID;
@@ -60,6 +61,11 @@ public class SmsHandlerService extends ActionService {
     @Override
     protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
+        if (prefs.getBoolean(SP_KEY_IGNORE_RECEIVED_SMS, true)) {
+            Log.i(TAG, "Ignore received SMS");
+            return;
+        }
+        
         final Object[] pdus = (Object[]) intent.getExtras().get("pdus");
         if (pdus == null) {
             Log.w(TAG, "Got no SMS messages, since the intent is missing the extra pdus");
