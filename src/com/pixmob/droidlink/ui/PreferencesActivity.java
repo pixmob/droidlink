@@ -17,6 +17,8 @@ package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
+import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_MISSED_CALLS;
+import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -34,6 +36,7 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.pixmob.droidlink.R;
@@ -72,6 +75,16 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         
         final Preference purgeEventsPref = pm.findPreference(DELETE_DATA_PREF);
         purgeEventsPref.setOnPreferenceClickListener(activity);
+        
+        // Disable some preferences if this device is actually not a phone.
+        final TelephonyManager tm = (TelephonyManager) activity
+                .getSystemService(Context.TELEPHONY_SERVICE);
+        final boolean deviceIsPhone = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
+        if (!deviceIsPhone) {
+            // This device is NOT a phone.
+            pm.findPreference(SP_KEY_IGNORE_MISSED_CALLS).setEnabled(false);
+            pm.findPreference(SP_KEY_IGNORE_RECEIVED_SMS).setEnabled(false);
+        }
     }
     
     @Override
@@ -146,10 +159,11 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     private static class PreferencesInitializer {
         public static void init(PreferencesActivity activity) {
             final ApplicationPreferencesFragment fragment = new ApplicationPreferencesFragment();
-            
             final FragmentTransaction ft = activity.getFragmentManager().beginTransaction();
             ft.add(fragment, "preferences");
             ft.commit();
+            
+            PreferencesInitializer.init(activity);
         }
     }
     
@@ -160,9 +174,6 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     public static class ApplicationPreferencesFragment extends PreferenceFragment {
         public ApplicationPreferencesFragment() {
             addPreferencesFromResource(R.xml.preferences);
-            
-            final PreferencesActivity activity = (PreferencesActivity) getActivity();
-            PreferencesActivity.configure(activity);
         }
     }
 }
