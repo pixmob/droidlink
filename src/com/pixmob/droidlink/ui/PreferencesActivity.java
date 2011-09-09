@@ -28,6 +28,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -48,6 +49,7 @@ import com.pixmob.droidlink.provider.EventsContract;
  */
 public class PreferencesActivity extends PreferenceActivity implements OnPreferenceClickListener {
     private static final String DELETE_DATA_PREF = "deleteData";
+    private static final String USER_ACCOUNT_PREF = "switchUserAccount";
     private static final int DELETE_DATA_CONFIRM_DIALOG = 1;
     private SharedPreferences prefs;
     
@@ -69,12 +71,23 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         }
     }
     
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        final Preference userAccountPref = getPreferenceManager().findPreference(USER_ACCOUNT_PREF);
+        userAccountPref.setSummary(prefs.getString(SP_KEY_ACCOUNT, null));
+    }
+    
     private static void configure(PreferencesActivity activity) {
         final PreferenceManager pm = activity.getPreferenceManager();
         activity.prefs = pm.getSharedPreferences();
         
         final Preference purgeEventsPref = pm.findPreference(DELETE_DATA_PREF);
         purgeEventsPref.setOnPreferenceClickListener(activity);
+        
+        final Preference userAccountPref = pm.findPreference(USER_ACCOUNT_PREF);
+        userAccountPref.setOnPreferenceClickListener(activity);
         
         // Disable some preferences if this device is actually not a phone.
         final TelephonyManager tm = (TelephonyManager) activity
@@ -91,6 +104,10 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     public boolean onPreferenceClick(Preference preference) {
         if (DELETE_DATA_PREF.equals(preference.getKey())) {
             showDialog(DELETE_DATA_CONFIRM_DIALOG);
+            return true;
+        }
+        if (USER_ACCOUNT_PREF.equals(preference.getKey())) {
+            startActivity(new Intent(this, AccountsActivity.class));
             return true;
         }
         

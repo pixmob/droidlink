@@ -18,4 +18,5 @@
     <string name="admin">Administration</string>
     <string name="delete_data">Effacer toutes les données</string>
     <string name="confirm_delete_data">Toutes les données associées au compte seront supprimées.</string>
+    <string name="switch_user_account">Changer compte utilisateur</string>
 </resources>

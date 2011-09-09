@@ -8,5 +8,6 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/admin">
         <Preference android:key="deleteData" android:title="@string/delete_data"></Preference>
+        <Preference android:key="switchUserAccount" android:title="@string/switch_user_account"></Preference>
     </PreferenceCategory>
 </PreferenceScreen>

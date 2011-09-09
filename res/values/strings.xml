@@ -19,4 +19,5 @@
     <string name="admin">Administration</string>
     <string name="delete_data">Delete database</string>
     <string name="confirm_delete_data">All data will be deleted.</string>
+    <string name="switch_user_account">Switch user account</string>
 </resources>
