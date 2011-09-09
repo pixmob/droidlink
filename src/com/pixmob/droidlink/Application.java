@@ -15,7 +15,6 @@
  */
 package com.pixmob.droidlink;
 
-import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
@@ -28,6 +27,7 @@ import android.content.SharedPreferences;
 import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.feature.StrictModeFeature;
+import com.pixmob.droidlink.service.DeviceInitService;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -59,6 +59,6 @@ public class Application extends android.app.Application {
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
         // Make sure a device id is generated for this device.
-        startService(new Intent(ACTION_INIT));
+        startService(new Intent(this, DeviceInitService.class));
     }
 }

@@ -15,7 +15,6 @@
  */
 package com.pixmob.droidlink.receiver;
 
-import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -23,6 +22,8 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
+
+import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * When the network becomes available, the device configuration initialization
@@ -34,7 +35,7 @@ public class NetworkConnectivityReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (isNetworkAvailable(context, intent)) {
             Log.i(TAG, "Network is available");
-            context.startService(new Intent(ACTION_INIT));
+            context.startService(new Intent(context, DeviceInitService.class));
         } else {
             Log.i(TAG, "Network is NOT available");
         }

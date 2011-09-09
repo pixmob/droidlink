@@ -61,7 +61,6 @@ public final class Constants {
     public static final String C2DM_MESSAGE_SYNC = "sync";
     public static final String C2DM_ACCOUNT_EXTRA = "account";
     
-    public static final String ACTION_INIT = "com.pixmob.droidlink.init";
     public static final String EXTRA_FORCE_UPLOAD = "upload";
     
     public static final String ACTION_SYNC = "com.pixmob.droidlink.sync";

@@ -15,7 +15,6 @@
  */
 package com.pixmob.droidlink;
 
-import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.C2DM_ACCOUNT_EXTRA;
 import static com.pixmob.droidlink.Constants.C2DM_MESSAGE_EXTRA;
 import static com.pixmob.droidlink.Constants.C2DM_MESSAGE_SYNC;
@@ -42,6 +41,7 @@ import com.google.android.c2dm.C2DMBaseReceiver;
 import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.provider.EventsContract;
+import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * Handle C2DM events.
@@ -75,7 +75,7 @@ public class C2DMReceiver extends C2DMBaseReceiver {
         prefsEditor.putString(SP_KEY_DEVICE_C2DM, registrationId);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
-        final Intent i = new Intent(ACTION_INIT);
+        final Intent i = new Intent(this, DeviceInitService.class);
         i.putExtra(EXTRA_FORCE_UPLOAD, true);
         startService(i);
     }

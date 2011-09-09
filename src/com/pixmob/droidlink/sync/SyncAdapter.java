@@ -16,7 +16,6 @@
 package com.pixmob.droidlink.sync;
 
 import static android.provider.BaseColumns._ID;
-import static com.pixmob.droidlink.Constants.ACTION_INIT;
 import static com.pixmob.droidlink.Constants.ACTION_SYNC;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.EXTRA_FORCE_UPLOAD;
@@ -60,6 +59,7 @@ import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.provider.EventsContract;
+import com.pixmob.droidlink.service.DeviceInitService;
 
 /**
  * Synchronize events between this device and the remote server.
@@ -473,7 +473,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
     
     private void registerDevice() {
-        final Intent i = new Intent(ACTION_INIT);
+        final Intent i = new Intent(getContext(), DeviceInitService.class);
         i.putExtra(EXTRA_FORCE_UPLOAD, true);
         getContext().startService(i);
     }

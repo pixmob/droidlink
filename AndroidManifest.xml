@@ -69,11 +69,7 @@
 
         <service android:name=".service.MissedCallHandlerService"></service>
         <service android:name=".service.SmsHandlerService"></service>
-        <service android:name=".service.DeviceInitService">
-            <intent-filter>
-                <action android:name="com.pixmob.droidlink.init" />
-            </intent-filter>
-        </service>
+        <service android:name=".service.DeviceInitService"></service>
         <service android:name=".C2DMReceiver" />
 
         <service android:name=".sync.SyncService" android:exported="true" android:process=":sync">
