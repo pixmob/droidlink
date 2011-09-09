@@ -99,7 +99,7 @@ public class NetworkClient {
     
     private static final String generateUserAgent(Context context) {
         return APPLICATION_NAME + "/" + APPLICATION_VERSION + " (" + Build.MANUFACTURER + " "
-                + Build.MODEL + " on Android " + Build.VERSION.SDK_INT;
+                + Build.MODEL + " with Android " + Build.VERSION.SDK_INT + ")";
     }
     
     public String getDeviceId() {
