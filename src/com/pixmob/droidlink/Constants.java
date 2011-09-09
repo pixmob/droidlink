@@ -51,7 +51,6 @@ public final class Constants {
     public static final String SP_KEY_DEVICE_ID = "deviceId";
     public static final String SP_KEY_DEVICE_NAME = "deviceName";
     public static final String SP_KEY_DEVICE_C2DM = "deviceC2dm";
-    public static final String SP_KEY_LAST_SYNC = "lastSync";
     
     public static final String C2DM_SENDER_ID = "pixmobstudio@gmail.com";
     public static final String C2DM_MESSAGE_EXTRA = "message";

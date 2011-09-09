@@ -23,7 +23,6 @@ import static com.pixmob.droidlink.Constants.EXTRA_FORCE_UPLOAD;
 import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
-import static com.pixmob.droidlink.Constants.SP_KEY_LAST_SYNC;
 import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.DEVICE_ID;
@@ -69,6 +68,7 @@ import com.pixmob.droidlink.provider.EventsContract;
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String[] PROJECTION = { _ID, TYPE, CREATED, NUMBER, NAME, MESSAGE, STATE };
     private static final String[] PROJECTION_ID = { _ID };
+    private static final String SP_KEY_LAST_SYNC = "lastSync";
     
     public SyncAdapter(final Context context) {
         super(context, false);
@@ -326,9 +326,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 final Set<String> localEventIds;
                 try {
                     c = provider.query(EventsContract.CONTENT_URI, PROJECTION_ID, DEVICE_ID
-                            + "=? AND " + STATE + "=?",
-                        new String[] { deviceId, String.valueOf(EventsContract.UPLOADED_STATE) },
-                        null);
+                            + "=? AND " + STATE + "=?", new String[] { deviceId,
+                            String.valueOf(EventsContract.UPLOADED_STATE) }, null);
                     localEventIds = new HashSet<String>(c.getCount());
                     
                     final int idIdx = c.getColumnIndexOrThrow(_ID);
