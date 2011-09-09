@@ -16,6 +16,7 @@
 package com.pixmob.droidlink.receiver;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -24,7 +25,6 @@ import android.content.SharedPreferences;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.pixmob.droidlink.Constants;
 import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.service.MissedCallHandlerService;
@@ -36,19 +36,19 @@ import com.pixmob.droidlink.service.MissedCallHandlerService;
  * @author Pixmob
  */
 public class MissedCallReceiver extends BroadcastReceiver {
+    private static final String SP_KEY_LAST_CALL_STATE = "lastCallState";
     private SharedPreferences prefs;
     private SharedPreferences.Editor prefsEditor;
     
     @Override
     public void onReceive(Context context, Intent intent) {
         if (prefs == null) {
-            prefs = context.getSharedPreferences(Constants.SHARED_PREFERENCES_FILE,
-                Context.MODE_PRIVATE);
+            prefs = context.getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
             prefsEditor = prefs.edit();
         }
         
         final String callState = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-        final String previousCallState = prefs.getString(Constants.SP_KEY_LAST_CALL_STATE, null);
+        final String previousCallState = prefs.getString(SP_KEY_LAST_CALL_STATE, null);
         
         if (TelephonyManager.EXTRA_STATE_RINGING.equals(callState)) {
             if (DEVELOPER_MODE) {
@@ -76,7 +76,7 @@ public class MissedCallReceiver extends BroadcastReceiver {
             Log.w(TAG, "Unknown call state: " + callState);
         }
         
-        prefsEditor.putString(Constants.SP_KEY_LAST_CALL_STATE, callState);
+        prefsEditor.putString(SP_KEY_LAST_CALL_STATE, callState);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
     }
 }
