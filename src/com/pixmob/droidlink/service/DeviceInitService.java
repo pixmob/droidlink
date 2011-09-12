@@ -59,7 +59,7 @@ public class DeviceInitService extends AbstractNetworkService {
     private SharedPreferences.Editor prefsEditor;
     
     public DeviceInitService() {
-        super("DroidLink/DeviceInit", 120 * 1000, 4);
+        super("DroidLink/DeviceInit", 30 * 1000, 4);
     }
     
     @Override
@@ -141,7 +141,7 @@ public class DeviceInitService extends AbstractNetworkService {
                     Log.i(TAG, "Initializing device " + client.getDeviceId() + ": name="
                             + deviceName + ", c2dm=" + deviceC2dm);
                 }
-                client.put("/device/" + client.getDeviceId(), data);
+                client.put("/devices/" + client.getDeviceId(), data);
                 
                 prefsEditor.putBoolean(SP_KEY_UPLOAD_DONE, true);
                 Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);

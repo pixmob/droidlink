@@ -77,8 +77,8 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         
         // Make sure this user has an unique device identifier.
         if (!newAccount.equals(oldAccount)) {
-            prefsEditor.putString(SP_KEY_DEVICE_ID, DeviceUtils.getDeviceId(fragment.getActivity(),
-                newAccount));
+            prefsEditor.putString(SP_KEY_DEVICE_ID,
+                DeviceUtils.getDeviceId(fragment.getActivity(), newAccount));
             Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         }
         
@@ -94,7 +94,7 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
             try {
                 data.put("name", prefs.getString(SP_KEY_DEVICE_NAME, null));
                 data.put("c2dm", prefs.getString(SP_KEY_DEVICE_C2DM, null));
-                client.put("/device/" + client.getDeviceId(), data);
+                client.put("/devices/" + client.getDeviceId(), data);
                 authResult = AUTH_OK;
             } catch (AppEngineAuthenticationException e) {
                 if (e.isAuthenticationPending()) {
