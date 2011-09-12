@@ -65,7 +65,7 @@ public class MissedCallHandlerService extends ActionService {
     @Override
     protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
-        if (prefs.getBoolean(SP_KEY_IGNORE_MISSED_CALLS, true)) {
+        if (prefs.getBoolean(SP_KEY_IGNORE_MISSED_CALLS, false)) {
             Log.i(TAG, "Ignore missed call");
             return;
         }

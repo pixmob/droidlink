@@ -61,7 +61,7 @@ public class SmsHandlerService extends ActionService {
     @Override
     protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
-        if (prefs.getBoolean(SP_KEY_IGNORE_RECEIVED_SMS, true)) {
+        if (prefs.getBoolean(SP_KEY_IGNORE_RECEIVED_SMS, false)) {
             Log.i(TAG, "Ignore received SMS");
             return;
         }
@@ -99,8 +99,8 @@ public class SmsHandlerService extends ActionService {
             
             Log.i(TAG, "Got SMS: number=" + fromAddress + ", name=" + fromDisplayName + ", time="
                     + message.getTimestampMillis());
-            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(), message
-                    .getTimestampMillis());
+            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(),
+                message.getTimestampMillis());
         }
         
         if (pdus.length != 0) {
