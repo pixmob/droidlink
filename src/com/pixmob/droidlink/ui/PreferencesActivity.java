@@ -24,8 +24,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -33,14 +31,15 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.preference.Preference.OnPreferenceClickListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.net.NetworkClient;
 import com.pixmob.droidlink.provider.EventsContract;
 
 /**
@@ -126,8 +125,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            final String account = prefs.getString(SP_KEY_ACCOUNT, null);
-                            new EventPurgeTask(account, getContentResolver()).start();
+                            new EventPurgeTask(PreferencesActivity.this).start();
                         }
                     }).setNegativeButton(android.R.string.cancel, null).create();
         }
@@ -140,13 +138,11 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
      * @author Pixmob
      */
     private static class EventPurgeTask extends Thread {
-        private final String account;
-        private final ContentResolver contentResolver;
+        private final Context context;
         
-        public EventPurgeTask(final String account, final ContentResolver contentResolver) {
+        public EventPurgeTask(final Context context) {
             super("DroidLink/EventPurge");
-            this.account = account;
-            this.contentResolver = contentResolver;
+            this.context = context;
         }
         
         @Override
@@ -161,14 +157,10 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         private void doRun() throws Exception {
             Log.i(TAG, "Delete data");
             
-            // Events are updated for deletion.
-            final ContentValues values = new ContentValues();
-            values.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
-            contentResolver.update(EventsContract.CONTENT_URI, values, null, null);
-            
-            if (account != null) {
-                // The deletion is done when the synchronization is started.
-                EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+            final NetworkClient client = NetworkClient.newInstance(context);
+            if (client != null) {
+                client.delete("/devices/" + client.getDeviceId());
+                context.getContentResolver().delete(EventsContract.CONTENT_URI, null, null);
             }
         }
     }
