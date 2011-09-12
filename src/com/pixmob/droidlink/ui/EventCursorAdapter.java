@@ -68,8 +68,9 @@ class EventCursorAdapter extends SimpleCursorAdapter {
         final int type = cursor.getInt(cursor.getColumnIndexOrThrow(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
-                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
+            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE);
         
         final String message = cursor.getString(cursor.getColumnIndexOrThrow(MESSAGE));
         
@@ -106,8 +107,16 @@ class EventCursorAdapter extends SimpleCursorAdapter {
             iv.setVisibility(View.INVISIBLE);
         }
         
-        iv = (ImageView) v.findViewById(R.id.event_pending_delete);
-        iv.setVisibility(EventsContract.PENDING_DELETE_STATE == state ? View.VISIBLE : View.GONE);
+        iv = (ImageView) v.findViewById(R.id.event_state);
+        if (state == EventsContract.PENDING_DELETE_STATE) {
+            iv.setImageResource(R.drawable.pending_delete);
+            iv.setVisibility(View.VISIBLE);
+        } else if (state == EventsContract.PENDING_UPLOAD_STATE) {
+            iv.setImageResource(R.drawable.pending_upload);
+            iv.setVisibility(View.VISIBLE);
+        } else {
+            iv.setVisibility(View.GONE);
+        }
         
         v.setTag(TAG_ID, cursor.getString(cursor.getColumnIndex(_ID)));
     }
