@@ -38,7 +38,6 @@ import android.util.Log;
 
 import com.pixmob.droidlink.R;
 import com.pixmob.droidlink.net.NetworkClient;
-import com.pixmob.droidlink.provider.EventsContract;
 
 /**
  * Application preferences.
@@ -154,7 +153,6 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
                 final NetworkClient client = NetworkClient.newInstance(activity);
                 if (client != null) {
                     client.delete("/events/all");
-                    EventsContract.sync(client.getAccount(), EventsContract.FULL_SYNC);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Failed to delete data", e);
