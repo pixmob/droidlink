@@ -16,7 +16,6 @@
 package com.pixmob.droidlink.net;
 
 import static com.pixmob.droidlink.Constants.APPLICATION_NAME;
-import static com.pixmob.droidlink.Constants.APPLICATION_VERSION;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.REMOTE_API_VERSION;
 import static com.pixmob.droidlink.Constants.SERVER_HOST;
@@ -47,6 +46,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
@@ -61,6 +61,8 @@ import com.pixmob.appengine.client.AppEngineClient;
  */
 public class NetworkClient {
     private static final String CHARSET = "UTF-8";
+    private static String applicationVersion;
+    
     private final AppEngineClient client;
     private final String deviceId;
     private final String account;
@@ -98,7 +100,15 @@ public class NetworkClient {
     }
     
     private static final String generateUserAgent(Context context) {
-        return APPLICATION_NAME + "/" + APPLICATION_VERSION + " (" + Build.MANUFACTURER + " "
+        if (applicationVersion == null) {
+            try {
+                applicationVersion = context.getPackageManager().getPackageInfo(
+                    context.getPackageName(), 0).versionName;
+            } catch (NameNotFoundException e) {
+                applicationVersion = "0.0.0";
+            }
+        }
+        return APPLICATION_NAME + "/" + applicationVersion + " (" + Build.MANUFACTURER + " "
                 + Build.MODEL + " with Android " + Build.VERSION.SDK_INT + ")";
     }
     

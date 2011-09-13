@@ -29,10 +29,6 @@ public final class Constants {
      */
     public static final String APPLICATION_NAME = "Droid Link";
     /**
-     * Application version.
-     */
-    public static final String APPLICATION_VERSION = "1.0";
-    /**
      * Remote API version.
      */
     public static final int REMOTE_API_VERSION = 1;
