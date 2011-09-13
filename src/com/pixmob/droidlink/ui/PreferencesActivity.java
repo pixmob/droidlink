@@ -22,18 +22,14 @@ import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.Fragment;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -60,13 +56,22 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         pm.setSharedPreferencesMode(Context.MODE_PRIVATE);
         pm.setSharedPreferencesName(SHARED_PREFERENCES_FILE);
         
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-            // Use a regular preference screen for Android systems < Honeycomb.
-            addPreferencesFromResource(R.xml.preferences);
-            configure(this);
-        } else {
-            // Use a fragment for Honeycomb+ systems.
-            PreferencesInitializer.init(this);
+        addPreferencesFromResource(R.xml.preferences);
+        prefs = pm.getSharedPreferences();
+        
+        final Preference purgeEventsPref = pm.findPreference(DELETE_DATA_PREF);
+        purgeEventsPref.setOnPreferenceClickListener(this);
+        
+        final Preference userAccountPref = pm.findPreference(USER_ACCOUNT_PREF);
+        userAccountPref.setOnPreferenceClickListener(this);
+        
+        // Disable some preferences if this device is actually not a phone.
+        final TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        final boolean deviceIsPhone = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
+        if (!deviceIsPhone) {
+            // This device is NOT a phone.
+            pm.findPreference(SP_KEY_IGNORE_MISSED_CALLS).setEnabled(false);
+            pm.findPreference(SP_KEY_IGNORE_RECEIVED_SMS).setEnabled(false);
         }
     }
     
@@ -80,27 +85,6 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         
         final Preference deleteDataPref = getPreferenceManager().findPreference(DELETE_DATA_PREF);
         deleteDataPref.setEnabled(account != null);
-    }
-    
-    private static void configure(PreferencesActivity activity) {
-        final PreferenceManager pm = activity.getPreferenceManager();
-        activity.prefs = pm.getSharedPreferences();
-        
-        final Preference purgeEventsPref = pm.findPreference(DELETE_DATA_PREF);
-        purgeEventsPref.setOnPreferenceClickListener(activity);
-        
-        final Preference userAccountPref = pm.findPreference(USER_ACCOUNT_PREF);
-        userAccountPref.setOnPreferenceClickListener(activity);
-        
-        // Disable some preferences if this device is actually not a phone.
-        final TelephonyManager tm = (TelephonyManager) activity
-                .getSystemService(Context.TELEPHONY_SERVICE);
-        final boolean deviceIsPhone = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
-        if (!deviceIsPhone) {
-            // This device is NOT a phone.
-            pm.findPreference(SP_KEY_IGNORE_MISSED_CALLS).setEnabled(false);
-            pm.findPreference(SP_KEY_IGNORE_RECEIVED_SMS).setEnabled(false);
-        }
     }
     
     @Override
@@ -162,31 +146,6 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
                 client.delete("/devices/" + client.getDeviceId());
                 context.getContentResolver().delete(EventsContract.CONTENT_URI, null, null);
             }
-        }
-    }
-    
-    /**
-     * Internal class for setting a fragment for preferences.
-     * @author Pixmob
-     */
-    private static class PreferencesInitializer {
-        public static void init(PreferencesActivity activity) {
-            final ApplicationPreferencesFragment fragment = new ApplicationPreferencesFragment();
-            final FragmentTransaction ft = activity.getFragmentManager().beginTransaction();
-            ft.add(fragment, "preferences");
-            ft.commit();
-            
-            PreferencesInitializer.init(activity);
-        }
-    }
-    
-    /**
-     * {@link Fragment} for application preferences.
-     * @author Pixmob
-     */
-    public static class ApplicationPreferencesFragment extends PreferenceFragment {
-        public ApplicationPreferencesFragment() {
-            addPreferencesFromResource(R.xml.preferences);
         }
     }
 }
