@@ -22,10 +22,12 @@ import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
@@ -46,11 +48,18 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     private static final String DELETE_DATA_PREF = "deleteData";
     private static final String USER_ACCOUNT_PREF = "switchUserAccount";
     private static final int DELETE_DATA_CONFIRM_DIALOG = 1;
+    private static final int DELETE_DATA_PROGRESS_DIALOG = 2;
     private SharedPreferences prefs;
+    private DeleteDataTask deleteDataTask;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        deleteDataTask = (DeleteDataTask) getLastNonConfigurationInstance();
+        if (deleteDataTask != null) {
+            deleteDataTask.activity = this;
+        }
         
         final PreferenceManager pm = getPreferenceManager();
         pm.setSharedPreferencesMode(Context.MODE_PRIVATE);
@@ -73,6 +82,11 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
             pm.findPreference(SP_KEY_IGNORE_MISSED_CALLS).setEnabled(false);
             pm.findPreference(SP_KEY_IGNORE_RECEIVED_SMS).setEnabled(false);
         }
+    }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        return deleteDataTask;
     }
     
     @Override
@@ -109,43 +123,59 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            new EventPurgeTask(PreferencesActivity.this).start();
+                            deleteDataTask = new DeleteDataTask();
+                            deleteDataTask.activity = PreferencesActivity.this;
+                            deleteDataTask.execute();
                         }
                     }).setNegativeButton(android.R.string.cancel, null).create();
+        }
+        if (DELETE_DATA_PROGRESS_DIALOG == id) {
+            final ProgressDialog dialog = new ProgressDialog(this);
+            dialog.setMessage(getString(R.string.deleting_data));
+            dialog.setCancelable(false);
+            return dialog;
         }
         
         return super.onCreateDialog(id);
     }
     
     /**
-     * Internal task for updating events for deletion.
+     * Internal task for deleting user events.
      * @author Pixmob
      */
-    private static class EventPurgeTask extends Thread {
-        private final Context context;
+    private static class DeleteDataTask extends AsyncTask<Void, Void, Void> {
+        public PreferencesActivity activity;
         
-        public EventPurgeTask(final Context context) {
-            super("DroidLink/EventPurge");
-            this.context = context;
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                Log.i(TAG, "Delete data");
+                
+                final NetworkClient client = NetworkClient.newInstance(activity);
+                if (client != null) {
+                    client.delete("/events/all");
+                    EventsContract.sync(client.getAccount(), EventsContract.FULL_SYNC);
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to delete data", e);
+            }
+            
+            return null;
         }
         
         @Override
-        public void run() {
-            try {
-                doRun();
-            } catch (Exception e) {
-                Log.w(TAG, "Event purge error", e);
-            }
+        protected void onPreExecute() {
+            activity.showDialog(DELETE_DATA_PROGRESS_DIALOG);
         }
         
-        private void doRun() throws Exception {
-            Log.i(TAG, "Delete data");
-            
-            final NetworkClient client = NetworkClient.newInstance(context);
-            if (client != null) {
-                client.delete("/devices/" + client.getDeviceId());
-                context.getContentResolver().delete(EventsContract.CONTENT_URI, null, null);
-            }
+        @Override
+        protected void onPostExecute(Void result) {
+            activity.dismissDialog(DELETE_DATA_PROGRESS_DIALOG);
+        }
+        
+        @Override
+        protected void onCancelled() {
+            activity.dismissDialog(DELETE_DATA_PROGRESS_DIALOG);
         }
     }
 }
