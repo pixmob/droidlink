@@ -16,6 +16,10 @@
 package com.pixmob.droidlink.provider;
 
 import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import android.accounts.Account;
 import android.content.ContentResolver;
 import android.net.Uri;
@@ -72,11 +76,9 @@ public class EventsContract {
             throw new IllegalArgumentException("Invalid sync type: " + syncType);
         }
         
-        final Bundle options = new Bundle();
-        options.putInt(EventsContract.SYNC_STRATEGY, syncType);
-        options.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-        ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT), EventsContract.AUTHORITY,
-            options);
+        // Start event synchronization in a thread to avoid disk writes in the
+        // main thread.
+        new EventsRefresher(account, syncType).start();
     }
     
     /**
@@ -104,5 +106,34 @@ public class EventsContract {
         public static final String NAME = "name";
         public static final String MESSAGE = "message";
         public static final String STATE = "state";
+    }
+    
+    /**
+     * Internal task for refreshing events.
+     * @author Pixmob
+     */
+    private static class EventsRefresher extends Thread {
+        private final Logger logger = Logger.getLogger(getClass().getName());
+        private final String account;
+        private final int syncType;
+        
+        public EventsRefresher(final String account, final int syncType) {
+            super("DroidLink/EventsRefresher");
+            this.account = account;
+            this.syncType = syncType;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                final Bundle options = new Bundle();
+                options.putInt(EventsContract.SYNC_STRATEGY, syncType);
+                options.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+                ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT),
+                    EventsContract.AUTHORITY, options);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to sync events", e);
+            }
+        }
     }
 }

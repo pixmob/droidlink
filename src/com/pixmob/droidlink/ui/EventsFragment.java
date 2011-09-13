@@ -18,7 +18,6 @@ package com.pixmob.droidlink.ui;
 import static android.provider.BaseColumns._ID;
 import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
 import static android.view.Menu.NONE;
-import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.TAG;
@@ -28,8 +27,6 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
-import android.accounts.Account;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -120,10 +117,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         // Check if an account is set.
         final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
         if (accountName != null) {
-            final Bundle options = new Bundle();
-            options.putInt(EventsContract.SYNC_STRATEGY, EventsContract.FULL_SYNC);
-            ContentResolver.requestSync(new Account(accountName, GOOGLE_ACCOUNT),
-                EventsContract.AUTHORITY, options);
+            EventsContract.sync(accountName, EventsContract.FULL_SYNC);
         }
     }
     
