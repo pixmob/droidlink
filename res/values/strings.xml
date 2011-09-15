@@ -21,5 +21,8 @@
     <string name="confirm_delete_data">All data will be deleted.</string>
     <string name="deleting_data">Deleting data...</string>
     <string name="switch_user_account">Switch user account</string>
-    <string name="delete">Delete</string>
+    <string name="delete_event">Delete event</string>
+    <string name="call">Call</string>
+    <string name="compose_sms">Compose SMS</string>
+    <string name="confirm_delete_event">This event will be permanently deleted.</string>
 </resources>

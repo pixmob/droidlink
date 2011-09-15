@@ -16,6 +16,7 @@
 package com.pixmob.droidlink.ui;
 
 import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
+import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_IF_ROOM;
 import static android.view.Menu.NONE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
@@ -29,9 +30,13 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
@@ -41,7 +46,9 @@ import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.PhoneLookup;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
 import android.text.TextUtils;
@@ -75,6 +82,7 @@ public class EventDetailsFragment extends Fragment {
     private TextView numberView;
     private TextView messageView;
     private Uri eventUri;
+    private String number;
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -100,30 +108,63 @@ public class EventDetailsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add(NONE, R.string.delete, NONE, R.string.delete).setIcon(
-            android.R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(android.R.drawable.ic_menu_call)
+                .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms).setIcon(
+            R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event).setIcon(
+            android.R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
     }
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.string.delete:
-                onDeleteEvent();
+            case R.string.call:
+                onCallNumber();
+                return true;
+            case R.string.compose_sms:
+                onComposeSMS();
+                return true;
+            case R.string.delete_event:
+                onConfirmDeleteEvent();
                 return true;
         }
         return super.onOptionsItemSelected(item);
     }
     
-    private void onDeleteEvent() {
-        final ContentValues cv = new ContentValues(1);
-        cv.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
-        getActivity().getContentResolver().update(eventUri, cv, null, null);
-        
-        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
-        if (account != null) {
-            EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+    private void onCallNumber() {
+        if (number != null) {
+            final Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number));
+            startActivity(i);
         }
-        
+    }
+    
+    private void onComposeSMS() {
+        if (number != null) {
+            final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("sms:" + number));
+            startActivity(i);
+        }
+    }
+    
+    private void onConfirmDeleteEvent() {
+        new ConfirmEventDeletionDialog().show(getSupportFragmentManager(), "dialog");
+    }
+    
+    private void onDeleteEvent() {
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
+        final Thread deleteEventTask = new Thread("DroidLink/DeleteEvent") {
+            @Override
+            public void run() {
+                final ContentValues cv = new ContentValues(1);
+                cv.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
+                getActivity().getContentResolver().update(eventUri, cv, null, null);
+                
+                if (account != null) {
+                    EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+                }
+            }
+        };
+        deleteEventTask.start();
         getActivity().finish();
     }
     
@@ -147,7 +188,6 @@ public class EventDetailsFragment extends Fragment {
         final long date;
         final int type;
         final String name;
-        final String number;
         final String message;
         try {
             date = cursor.getLong(cursor.getColumnIndexOrThrow(CREATED));
@@ -173,10 +213,10 @@ public class EventDetailsFragment extends Fragment {
         final String eventNumber;
         if (number == null) {
             eventName = getActivity().getString(R.string.unknown_number);
-            eventNumber = null;
+            eventNumber = getString(android.R.string.emptyPhoneNumber);
         } else if (name == null) {
             eventName = number;
-            eventNumber = null;
+            eventNumber = getString(android.R.string.emptyPhoneNumber);
         } else {
             eventName = name;
             eventNumber = number;
@@ -192,6 +232,10 @@ public class EventDetailsFragment extends Fragment {
     
     public void setEvent(Uri eventUri) {
         this.eventUri = eventUri;
+        
+        if (isVisible()) {
+            initFields();
+        }
     }
     
     /**
@@ -252,6 +296,29 @@ public class EventDetailsFragment extends Fragment {
             if (result != null) {
                 fragment.contactView.setImageDrawable(result);
             }
+        }
+    }
+    
+    /**
+     * Confirmation dialog for deleting an event.
+     * @author Pixmob
+     */
+    public static class ConfirmEventDeletionDialog extends DialogFragment {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder(getActivity()).setIcon(
+                android.R.drawable.ic_dialog_alert).setMessage(R.string.confirm_delete_event)
+                    .setTitle(R.string.delete_event).setNegativeButton(android.R.string.cancel,
+                        null).setPositiveButton(android.R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                final EventDetailsFragment fragment = (EventDetailsFragment) ((FragmentActivity) getActivity())
+                                        .getSupportFragmentManager().findFragmentById(
+                                            R.id.event_details);
+                                fragment.onDeleteEvent();
+                            }
+                        }).create();
         }
     }
 }
