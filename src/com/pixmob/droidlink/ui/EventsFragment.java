@@ -31,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -128,7 +129,8 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         final String eventId = (String) v.getTag(EventCursorAdapter.TAG_ID);
         Log.i(TAG, "Opening event details for " + eventId);
         
-        // TODO open event details
+        final Uri eventUri = Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId);
+        startActivity(new Intent(getActivity(), EventDetailsActivity.class).setData(eventUri));
     }
     
     @Override

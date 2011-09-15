@@ -39,10 +39,10 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
@@ -102,7 +102,7 @@ public class EventsContentProvider extends ContentProvider {
         
         switch (URI_MATCHER.match(uri)) {
             case EVENT_ID:
-                qb.appendWhere(_ID + "=" + uri.getPathSegments().get(1) + "'");
+                qb.appendWhere(_ID + "='" + uri.getPathSegments().get(1) + "'");
                 break;
             default:
                 break;
