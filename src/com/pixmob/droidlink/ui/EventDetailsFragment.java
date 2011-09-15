@@ -21,12 +21,19 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.content.ContentResolver;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.BaseColumns;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.PhoneLookup;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -52,6 +59,7 @@ public class EventDetailsFragment extends Fragment {
     }
     private TextView dateView;
     private ImageView typeView;
+    private ImageView contactView;
     private TextView nameView;
     private TextView numberView;
     private TextView messageView;
@@ -62,6 +70,7 @@ public class EventDetailsFragment extends Fragment {
         final View v = inflater.inflate(R.layout.event_details_fragment, container, false);
         dateView = (TextView) v.findViewById(R.id.event_date);
         typeView = (ImageView) v.findViewById(R.id.event_type);
+        contactView = (ImageView) v.findViewById(R.id.contact_picture);
         nameView = (TextView) v.findViewById(R.id.event_name);
         numberView = (TextView) v.findViewById(R.id.event_number);
         messageView = (TextView) v.findViewById(R.id.event_message);
@@ -128,9 +137,63 @@ public class EventDetailsFragment extends Fragment {
         
         messageView.setText(message);
         messageView.setVisibility(TextUtils.isEmpty(message) ? View.GONE : View.VISIBLE);
+        
+        new GetContactPictureTask(this, eventNumber).execute();
     }
     
     public void setEvent(Uri eventUri) {
         this.eventUri = eventUri;
+    }
+    
+    /**
+     * Internal task for loading a contact picture.
+     * @author Pixmob
+     */
+    private static class GetContactPictureTask extends AsyncTask<Void, Void, Drawable> {
+        private final EventDetailsFragment fragment;
+        private final String number;
+        
+        public GetContactPictureTask(final EventDetailsFragment fragment, final String number) {
+            this.fragment = fragment;
+            this.number = number;
+        }
+        
+        @Override
+        protected void onPreExecute() {
+            fragment.contactView.setImageResource(R.drawable.ic_contact_picture);
+        }
+        
+        @Override
+        protected Drawable doInBackground(Void... params) {
+            final ContentResolver contentResolver = fragment.getActivity().getContentResolver();
+            Cursor c = contentResolver.query(Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
+                Uri.encode(number)), new String[] { BaseColumns._ID }, null, null, null);
+            int contactKey = -1;
+            try {
+                if (c.moveToNext()) {
+                    contactKey = c.getInt(c.getColumnIndexOrThrow(BaseColumns._ID));
+                }
+            } finally {
+                c.close();
+            }
+            
+            Drawable contactPicture = null;
+            if (contactKey != -1) {
+                final InputStream input = Contacts.openContactPhotoInputStream(contentResolver, Uri
+                        .withAppendedPath(Contacts.CONTENT_URI, String.valueOf(contactKey)));
+                if (input != null) {
+                    contactPicture = Drawable.createFromStream(input, "contactpicture");
+                }
+            }
+            
+            return contactPicture;
+        }
+        
+        @Override
+        protected void onPostExecute(Drawable result) {
+            if (result != null) {
+                fragment.contactView.setImageDrawable(result);
+            }
+        }
     }
 }
