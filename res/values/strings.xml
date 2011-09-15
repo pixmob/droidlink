@@ -21,4 +21,5 @@
     <string name="confirm_delete_data">All data will be deleted.</string>
     <string name="deleting_data">Deleting data...</string>
     <string name="switch_user_account">Switch user account</string>
+    <string name="delete">Delete</string>
 </resources>

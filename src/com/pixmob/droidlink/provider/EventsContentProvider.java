@@ -192,7 +192,7 @@ public class EventsContentProvider extends ContentProvider {
                 break;
             case EVENT_ID:
                 final String id = uri.getPathSegments().get(1);
-                String fullSelection = _ID + "=" + id;
+                String fullSelection = _ID + "='" + id + "'";
                 if (!TextUtils.isEmpty(selection)) {
                     fullSelection += " AND (" + selection + ")";
                 }

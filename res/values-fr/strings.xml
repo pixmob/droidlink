@@ -20,4 +20,5 @@
     <string name="confirm_delete_data">Toutes les données associées au compte seront supprimées.</string>
     <string name="deleting_data">Suppression en cours...</string>
     <string name="switch_user_account">Changer compte utilisateur</string>
+    <string name="delete">Supprimer</string>
 </resources>

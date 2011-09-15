@@ -15,6 +15,10 @@
  */
 package com.pixmob.droidlink.ui;
 
+import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
+import static android.view.Menu.NONE;
+import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
@@ -26,6 +30,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -35,9 +42,12 @@ import android.provider.BaseColumns;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.PhoneLookup;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.Menu;
+import android.support.v4.view.MenuItem;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -57,6 +67,7 @@ public class EventDetailsFragment extends Fragment {
         EVENT_ICONS.put(EventsContract.MISSED_CALL_TYPE, R.drawable.ic_missed_call);
         EVENT_ICONS.put(EventsContract.RECEIVED_SMS_TYPE, R.drawable.ic_sms_mms);
     }
+    private SharedPreferences prefs;
     private TextView dateView;
     private ImageView typeView;
     private ImageView contactView;
@@ -76,6 +87,44 @@ public class EventDetailsFragment extends Fragment {
         messageView = (TextView) v.findViewById(R.id.event_message);
         
         return v;
+    }
+    
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        prefs = getActivity().getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
+        
+        setHasOptionsMenu(true);
+    }
+    
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        menu.add(NONE, R.string.delete, NONE, R.string.delete).setIcon(
+            android.R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.string.delete:
+                onDeleteEvent();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    
+    private void onDeleteEvent() {
+        final ContentValues cv = new ContentValues(1);
+        cv.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
+        getActivity().getContentResolver().update(eventUri, cv, null, null);
+        
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
+        if (account != null) {
+            EventsContract.sync(account, EventsContract.LIGHT_SYNC);
+        }
+        
+        getActivity().finish();
     }
     
     @Override
@@ -160,28 +209,37 @@ public class EventDetailsFragment extends Fragment {
         
         @Override
         protected void onPreExecute() {
+            // Set a default contact picture.
             fragment.contactView.setImageResource(R.drawable.ic_contact_picture);
         }
         
         @Override
         protected Drawable doInBackground(Void... params) {
+            // First, the contact identifier is searched from its phone number.
             final ContentResolver contentResolver = fragment.getActivity().getContentResolver();
             Cursor c = contentResolver.query(Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
                 Uri.encode(number)), new String[] { BaseColumns._ID }, null, null, null);
             int contactKey = -1;
             try {
                 if (c.moveToNext()) {
+                    // We found a contact with the same phone number.
                     contactKey = c.getInt(c.getColumnIndexOrThrow(BaseColumns._ID));
                 }
             } finally {
                 c.close();
             }
             
+            // At this point, we may not have found a contact identifier for
+            // this phone number. In this case, the contact picture is not
+            // updated: the default one is used.
+            
             Drawable contactPicture = null;
             if (contactKey != -1) {
+                // Then, we look for the contact picture.
                 final InputStream input = Contacts.openContactPhotoInputStream(contentResolver, Uri
                         .withAppendedPath(Contacts.CONTENT_URI, String.valueOf(contactKey)));
                 if (input != null) {
+                    // The contact has a profile picture.
                     contactPicture = Drawable.createFromStream(input, "contactpicture");
                 }
             }
