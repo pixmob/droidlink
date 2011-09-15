@@ -77,11 +77,11 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add(NONE, R.string.refresh, NONE, R.string.refresh).setIcon(R.drawable.ic_refresh)
-                .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        menu.add(NONE, R.string.refresh, NONE, R.string.refresh)
+                .setIcon(R.drawable.ic_menu_refresh).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
         
         menu.add(NONE, R.string.account_selection, NONE, R.string.account_selection).setIcon(
-            R.drawable.ic_menu_login);
+            R.drawable.ic_menu_account_list);
         menu.add(NONE, R.string.settings, NONE, R.string.settings).setIcon(
             android.R.drawable.ic_menu_preferences);
     }
