@@ -68,7 +68,7 @@ public class DeviceInitService extends AbstractNetworkService {
         prefs = getSharedPreferences(SHARED_PREFERENCES_FILE, MODE_PRIVATE);
         prefsEditor = prefs.edit();
         openMainActivity = PendingIntent.getActivity(this, 0,
-            new Intent(this, EventsActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+            new Intent(this, EventsActivity.class), PendingIntent.FLAG_CANCEL_CURRENT);
     }
     
     @Override
