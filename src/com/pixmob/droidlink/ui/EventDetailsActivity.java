@@ -16,6 +16,7 @@
 package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.TAG;
+import android.app.NotificationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
@@ -30,6 +31,8 @@ import com.pixmob.droidlink.R;
  * @author Pixmob
  */
 public class EventDetailsActivity extends FragmentActivity {
+    private NotificationManager notificationManager;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +45,8 @@ public class EventDetailsActivity extends FragmentActivity {
         actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
+        
+        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
     
     @Override
@@ -56,5 +61,11 @@ public class EventDetailsActivity extends FragmentActivity {
                 details.setEvent(eventUri);
             }
         }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        notificationManager.cancel(R.string.received_new_event);
     }
 }

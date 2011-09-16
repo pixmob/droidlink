@@ -71,7 +71,7 @@ public class MissedCallHandlerService extends ActionService {
         }
         
         // Wait some time to ensure the missed call is written to the call log.
-        SystemClock.sleep(1000);
+        SystemClock.sleep(2000);
         
         final Cursor c = getContentResolver().query(CallLog.Calls.CONTENT_URI, CALL_FIELDS, null,
             null, CallLog.Calls.DEFAULT_SORT_ORDER);

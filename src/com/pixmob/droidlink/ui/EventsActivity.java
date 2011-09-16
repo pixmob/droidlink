@@ -17,14 +17,18 @@ package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.ACTION_SYNC;
 import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
+import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_EVENT_LIST_VISIBLE;
 import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
@@ -32,6 +36,8 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Window;
 
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -40,7 +46,9 @@ import com.pixmob.droidlink.util.Accounts;
  */
 public class EventsActivity extends FragmentActivity {
     private static final int NO_ACCOUNT_AVAILABLE = 1;
+    private NotificationManager notificationManager;
     private SyncActionReceiver syncActionReceiver;
+    private SharedPreferences.Editor prefsEditor;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,9 @@ public class EventsActivity extends FragmentActivity {
         actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
         
         syncActionReceiver = new SyncActionReceiver();
+        
+        prefsEditor = getSharedPreferences(SHARED_PREFERENCES_FILE, MODE_PRIVATE).edit();
+        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
     
     @Override
@@ -80,28 +91,36 @@ public class EventsActivity extends FragmentActivity {
         if (accounts.length == 0) {
             showDialog(NO_ACCOUNT_AVAILABLE);
         }
+        
+        prefsEditor.putBoolean(SP_KEY_EVENT_LIST_VISIBLE, true);
+        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        
+        notificationManager.cancel(R.string.received_new_event);
     }
     
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(syncActionReceiver);
+        
+        prefsEditor.putBoolean(SP_KEY_EVENT_LIST_VISIBLE, false);
+        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
     }
     
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE == id) {
-            return new AlertDialog.Builder(this).setTitle(R.string.error)
-                    .setIcon(R.drawable.ic_dialog_alert).setCancelable(false)
-                    .setMessage(R.string.no_account_available)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            // There is no Google account on this device:
-                            // the application cannot run.
-                            finish();
-                        }
-                    }).create();
+            return new AlertDialog.Builder(this).setTitle(R.string.error).setIcon(
+                R.drawable.ic_dialog_alert).setCancelable(false).setMessage(
+                R.string.no_account_available).setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // There is no Google account on this device:
+                        // the application cannot run.
+                        finish();
+                    }
+                }).create();
         }
         
         return super.onCreateDialog(id);

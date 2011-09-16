@@ -51,6 +51,7 @@ public final class Constants {
     public static final String SP_KEY_DEVICE_ID = "deviceId";
     public static final String SP_KEY_DEVICE_NAME = "deviceName";
     public static final String SP_KEY_DEVICE_C2DM = "deviceC2dm";
+    public static final String SP_KEY_EVENT_LIST_VISIBLE = "eventListVisible";
     
     public static final String C2DM_SENDER_ID = "pixmobstudio@gmail.com";
     public static final String C2DM_MESSAGE_EXTRA = "message";
@@ -61,6 +62,10 @@ public final class Constants {
     
     public static final String ACTION_SYNC = "com.pixmob.droidlink.sync";
     public static final String EXTRA_RUNNING = "running";
+    
+    public static final String ACTION_NEW_EVENT = "com.pixmob.droidlink.newevent";
+    public static final String EXTRA_EVENT_COUNT = "eventCount";
+    public static final String EXTRA_EVENT_ID = "eventId";
     
     /**
      * Google account type.

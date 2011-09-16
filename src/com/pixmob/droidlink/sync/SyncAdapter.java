@@ -16,8 +16,11 @@
 package com.pixmob.droidlink.sync;
 
 import static android.provider.BaseColumns._ID;
+import static com.pixmob.droidlink.Constants.ACTION_NEW_EVENT;
 import static com.pixmob.droidlink.Constants.ACTION_SYNC;
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.EXTRA_EVENT_COUNT;
+import static com.pixmob.droidlink.Constants.EXTRA_EVENT_ID;
 import static com.pixmob.droidlink.Constants.EXTRA_FORCE_UPLOAD;
 import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
@@ -308,6 +311,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
             }
             
+            String newEventId = null;
+            int newEventCount = 0;
+            
             // Reconcile remote events with local events.
             for (int i = 0; i < eventsLen; ++i) {
                 String eventId = null;
@@ -347,6 +353,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         }
                         provider.insert(EventsContract.CONTENT_URI, values);
                         syncResult.stats.numInserts++;
+                        
+                        ++newEventCount;
+                        if (newEventId != null) {
+                            newEventId = eventId;
+                        }
                     }
                     
                     // This event now exists in the local database:
@@ -361,6 +372,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     Log.w(TAG, "Failed to get event " + eventId + " from local database", e);
                     syncResult.stats.numIoExceptions++;
                 }
+            }
+            
+            if (newEventCount > 1) {
+                newEventId = null;
+            }
+            if (newEventCount != 0) {
+                startSyncNotificationService(newEventCount, newEventId);
             }
             
             // The remaining event identifiers was removed on the remote
@@ -434,6 +452,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private void registerDevice() {
         final Intent i = new Intent(getContext(), DeviceInitService.class);
         i.putExtra(EXTRA_FORCE_UPLOAD, true);
+        getContext().startService(i);
+    }
+    
+    private void startSyncNotificationService(int newEventCount, String newEventId) {
+        final Intent i = new Intent(ACTION_NEW_EVENT);
+        i.putExtra(EXTRA_EVENT_COUNT, newEventCount);
+        if (newEventId != null) {
+            i.putExtra(EXTRA_EVENT_ID, newEventId);
+        }
         getContext().startService(i);
     }
     

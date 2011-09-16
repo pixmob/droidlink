@@ -73,6 +73,12 @@
         <service android:name=".service.DeviceInitService"></service>
         <service android:name=".C2DMReceiver" />
 
+        <service android:name=".service.SyncNotificationService">
+            <intent-filter>
+                <action android:name="com.pixmob.droidlink.newevent" />
+            </intent-filter>
+        </service>
+
         <service android:name=".sync.SyncService" android:exported="true">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
