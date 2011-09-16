@@ -52,7 +52,6 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
 import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -197,7 +196,7 @@ public class EventDetailsFragment extends Fragment {
         final long date;
         final int type;
         final String name;
-        final String message;
+        String message;
         try {
             date = cursor.getLong(cursor.getColumnIndexOrThrow(CREATED));
             type = cursor.getInt(cursor.getColumnIndexOrThrow(TYPE));
@@ -233,8 +232,10 @@ public class EventDetailsFragment extends Fragment {
         nameView.setText(eventName);
         numberView.setText(eventNumber);
         
+        if (EventsContract.MISSED_CALL_TYPE == type) {
+            message = getString(R.string.missed_call);
+        }
         messageView.setText(message);
-        messageView.setVisibility(TextUtils.isEmpty(message) ? View.GONE : View.VISIBLE);
         
         new GetContactPictureTask(this, eventNumber).execute();
     }

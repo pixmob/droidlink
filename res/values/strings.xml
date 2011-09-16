@@ -25,4 +25,5 @@
     <string name="call">Call</string>
     <string name="compose_sms">Compose SMS</string>
     <string name="confirm_delete_event">This event will be permanently deleted.</string>
+    <string name="missed_call">Missed call.</string>
 </resources>
