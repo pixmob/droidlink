@@ -221,10 +221,10 @@ public class EventDetailsFragment extends Fragment {
         final String eventNumber;
         if (number == null) {
             eventName = getActivity().getString(R.string.unknown_number);
-            eventNumber = getString(android.R.string.emptyPhoneNumber);
+            eventNumber = null;
         } else if (name == null) {
             eventName = number;
-            eventNumber = getString(android.R.string.emptyPhoneNumber);
+            eventNumber = null;
         } else {
             eventName = name;
             eventNumber = number;
