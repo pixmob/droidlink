@@ -108,12 +108,12 @@ public class EventDetailsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(android.R.drawable.ic_menu_call)
+        menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(R.drawable.ic_menu_call)
                 .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
         menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms).setIcon(
             R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
         menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event).setIcon(
-            android.R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
+            R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
     }
     
     @Override
