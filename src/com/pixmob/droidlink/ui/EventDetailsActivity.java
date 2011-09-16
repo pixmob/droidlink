@@ -17,6 +17,7 @@ package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.TAG;
 import android.app.NotificationManager;
+import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
@@ -47,6 +48,13 @@ public class EventDetailsActivity extends FragmentActivity {
         actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.nav_background));
         
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+    }
+    
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // Enable dithering, ie better gradients.
+        getWindow().setFormat(PixelFormat.RGBA_8888);
     }
     
     @Override
