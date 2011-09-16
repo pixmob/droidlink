@@ -51,6 +51,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -108,10 +109,18 @@ public class EventDetailsFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(R.drawable.ic_menu_call)
-                .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
-        menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms).setIcon(
-            R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        
+        // Include actions for calling and writing SMS only for phones.
+        final TelephonyManager tm = (TelephonyManager) getActivity().getSystemService(
+            Context.TELEPHONY_SERVICE);
+        final boolean deviceIsPhone = tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE;
+        if (deviceIsPhone) {
+            menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(R.drawable.ic_menu_call)
+                    .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+            menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms).setIcon(
+                R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+        }
+        
         menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event).setIcon(
             R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
     }
