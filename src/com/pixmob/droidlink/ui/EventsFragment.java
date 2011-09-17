@@ -75,6 +75,14 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
     }
     
     @Override
+    public void onResume() {
+        super.onResume();
+        
+        // Refresh events.
+        getLoaderManager().restartLoader(0, null, this);
+    }
+    
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         menu.add(NONE, R.string.refresh, NONE, R.string.refresh)
