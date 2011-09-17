@@ -22,6 +22,7 @@ import static com.pixmob.droidlink.Constants.NEW_EVENT_NOTIFICATION;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_EVENT_LIST_VISIBLE;
+import static com.pixmob.droidlink.Constants.SP_KEY_UNREAD_EVENT_COUNT;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -36,6 +37,8 @@ import android.util.Log;
 import com.pixmob.actionservice.ActionExecutionFailedException;
 import com.pixmob.actionservice.ActionService;
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.provider.EventsContract;
 import com.pixmob.droidlink.ui.EventDetailsActivity;
 import com.pixmob.droidlink.ui.EventsActivity;
@@ -47,6 +50,7 @@ import com.pixmob.droidlink.ui.EventsActivity;
 public class SyncNotificationService extends ActionService {
     private NotificationManager notificationManager;
     private SharedPreferences prefs;
+    private SharedPreferences.Editor prefsEditor;
     private PendingIntent openMainActivity;
     
     public SyncNotificationService() {
@@ -58,6 +62,7 @@ public class SyncNotificationService extends ActionService {
         super.onCreate();
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         prefs = getSharedPreferences(SHARED_PREFERENCES_FILE, MODE_PRIVATE);
+        prefsEditor = prefs.edit();
         
         openMainActivity = PendingIntent.getActivity(this, 0,
             new Intent(this, EventsActivity.class), PendingIntent.FLAG_CANCEL_CURRENT);
@@ -80,10 +85,14 @@ public class SyncNotificationService extends ActionService {
     }
     
     private void handleNewEvent(int eventCount, String eventId) {
+        final int unreadEventCount = prefs.getInt(SP_KEY_UNREAD_EVENT_COUNT, 0) + eventCount;
+        prefsEditor.putInt(SP_KEY_UNREAD_EVENT_COUNT, unreadEventCount);
+        Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        
         final PendingIntent pi;
-        if (eventCount > 1) {
+        if (unreadEventCount > 1) {
             pi = openMainActivity;
-            Log.i(TAG, "Add event notification for " + eventCount + " events");
+            Log.i(TAG, "Add event notification for " + unreadEventCount + " events");
         } else {
             final Uri eventUri = Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId);
             pi = PendingIntent.getActivity(this, 0,
@@ -94,27 +103,30 @@ public class SyncNotificationService extends ActionService {
         
         final String account = prefs.getString(SP_KEY_ACCOUNT, null);
         final Notification n = Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB ? createLegacyNotification(
-            this, account, pi) : createHoneycombNotification(this, account, pi);
+            this, account, unreadEventCount, pi) : createHoneycombNotification(this, account,
+            unreadEventCount, pi);
         notificationManager.notify(NEW_EVENT_NOTIFICATION, n);
     }
     
     private static Notification createLegacyNotification(Context context, String account,
-            PendingIntent pi) {
+            int unreadEventCount, PendingIntent pi) {
         final Notification n = new Notification(R.drawable.stat_notify_new_event,
                 context.getString(R.string.received_new_event), System.currentTimeMillis());
         n.defaults = Notification.DEFAULT_ALL;
         n.setLatestEventInfo(context.getApplicationContext(),
             context.getString(R.string.received_new_event), account, pi);
+        n.number = unreadEventCount;
         return n;
     }
     
     private static Notification createHoneycombNotification(Context context, String account,
-            PendingIntent pi) {
+            int unreadEventCount, PendingIntent pi) {
         return new Notification.Builder(context.getApplicationContext()).setAutoCancel(true)
                 .setSmallIcon(R.drawable.stat_notify_new_event)
                 .setTicker(context.getString(R.string.received_new_event))
                 .setWhen(System.currentTimeMillis()).setContentIntent(pi)
                 .setContentTitle(context.getString(R.string.received_new_event))
-                .setContentText(account).setDefaults(Notification.DEFAULT_ALL).getNotification();
+                .setContentText(account).setDefaults(Notification.DEFAULT_ALL)
+                .setNumber(unreadEventCount).getNotification();
     }
 }

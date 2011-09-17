@@ -20,6 +20,7 @@ import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
 import static com.pixmob.droidlink.Constants.NEW_EVENT_NOTIFICATION;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_EVENT_LIST_VISIBLE;
+import static com.pixmob.droidlink.Constants.SP_KEY_UNREAD_EVENT_COUNT;
 import android.accounts.Account;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -94,6 +95,7 @@ public class EventsActivity extends FragmentActivity {
         }
         
         prefsEditor.putBoolean(SP_KEY_EVENT_LIST_VISIBLE, true);
+        prefsEditor.remove(SP_KEY_UNREAD_EVENT_COUNT);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
         notificationManager.cancel(NEW_EVENT_NOTIFICATION);
