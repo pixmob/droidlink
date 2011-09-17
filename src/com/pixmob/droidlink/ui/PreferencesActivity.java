@@ -117,7 +117,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     @Override
     protected Dialog onCreateDialog(int id) {
         if (DELETE_DATA_CONFIRM_DIALOG == id) {
-            return new AlertDialog.Builder(this).setIcon(android.R.drawable.ic_dialog_info)
+            return new AlertDialog.Builder(this).setIcon(android.R.drawable.ic_dialog_alert)
                     .setTitle(R.string.delete_data).setMessage(R.string.confirm_delete_data)
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
