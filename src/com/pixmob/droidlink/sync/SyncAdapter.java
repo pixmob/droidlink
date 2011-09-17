@@ -355,7 +355,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         syncResult.stats.numInserts++;
                         
                         ++newEventCount;
-                        if (newEventId != null) {
+                        if (newEventId == null) {
                             newEventId = eventId;
                         }
                     }

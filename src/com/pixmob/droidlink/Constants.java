@@ -67,6 +67,8 @@ public final class Constants {
     public static final String EXTRA_EVENT_COUNT = "eventCount";
     public static final String EXTRA_EVENT_ID = "eventId";
     
+    public static final int NEW_EVENT_NOTIFICATION = R.string.received_new_event;
+    
     /**
      * Google account type.
      */

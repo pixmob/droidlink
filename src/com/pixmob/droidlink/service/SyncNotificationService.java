@@ -18,15 +18,19 @@ package com.pixmob.droidlink.service;
 import static com.pixmob.droidlink.Constants.ACTION_NEW_EVENT;
 import static com.pixmob.droidlink.Constants.EXTRA_EVENT_COUNT;
 import static com.pixmob.droidlink.Constants.EXTRA_EVENT_ID;
+import static com.pixmob.droidlink.Constants.NEW_EVENT_NOTIFICATION;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_EVENT_LIST_VISIBLE;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 
 import com.pixmob.actionservice.ActionExecutionFailedException;
@@ -63,11 +67,11 @@ public class SyncNotificationService extends ActionService {
     protected void onHandleAction(Intent intent) throws ActionExecutionFailedException,
             InterruptedException {
         if (ACTION_NEW_EVENT.equals(intent.getAction())
-                && prefs.getBoolean(SP_KEY_EVENT_LIST_VISIBLE, false)) {
+                && !prefs.getBoolean(SP_KEY_EVENT_LIST_VISIBLE, false)) {
             final int eventCount = intent.getIntExtra(EXTRA_EVENT_COUNT, 0);
             final String eventId = intent.getStringExtra(EXTRA_EVENT_ID);
             
-            if (eventCount == 1 && eventId != null) {
+            if (eventCount == 1 && eventId == null) {
                 Log.wtf(TAG, "Missing event identifier: cannot add notification");
             } else {
                 handleNewEvent(eventCount, eventId);
@@ -79,16 +83,38 @@ public class SyncNotificationService extends ActionService {
         final PendingIntent pi;
         if (eventCount > 1) {
             pi = openMainActivity;
+            Log.i(TAG, "Add event notification for " + eventCount + " events");
         } else {
             final Uri eventUri = Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId);
-            pi = PendingIntent.getActivity(this, 0, new Intent(this, EventDetailsActivity.class)
-                    .setData(eventUri), PendingIntent.FLAG_CANCEL_CURRENT);
+            pi = PendingIntent.getActivity(this, 0,
+                new Intent(this, EventDetailsActivity.class).setData(eventUri),
+                PendingIntent.FLAG_CANCEL_CURRENT);
+            Log.i(TAG, "Add event notification for a single event");
         }
         
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
+        final Notification n = Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB ? createLegacyNotification(
+            this, account, pi) : createHoneycombNotification(this, account, pi);
+        notificationManager.notify(NEW_EVENT_NOTIFICATION, n);
+    }
+    
+    private static Notification createLegacyNotification(Context context, String account,
+            PendingIntent pi) {
         final Notification n = new Notification(R.drawable.stat_notify_new_event,
-                getString(R.string.received_new_event), System.currentTimeMillis());
-        n.setLatestEventInfo(this, getString(R.string.app_name),
-            getString(R.string.received_new_event), pi);
-        notificationManager.notify(R.string.received_new_event, n);
+                context.getString(R.string.received_new_event), System.currentTimeMillis());
+        n.defaults = Notification.DEFAULT_ALL;
+        n.setLatestEventInfo(context.getApplicationContext(),
+            context.getString(R.string.received_new_event), account, pi);
+        return n;
+    }
+    
+    private static Notification createHoneycombNotification(Context context, String account,
+            PendingIntent pi) {
+        return new Notification.Builder(context.getApplicationContext()).setAutoCancel(true)
+                .setSmallIcon(R.drawable.stat_notify_new_event)
+                .setTicker(context.getString(R.string.received_new_event))
+                .setWhen(System.currentTimeMillis()).setContentIntent(pi)
+                .setContentTitle(context.getString(R.string.received_new_event))
+                .setContentText(account).setDefaults(Notification.DEFAULT_ALL).getNotification();
     }
 }

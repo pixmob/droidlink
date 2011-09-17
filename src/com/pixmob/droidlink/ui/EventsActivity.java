@@ -17,6 +17,7 @@ package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.ACTION_SYNC;
 import static com.pixmob.droidlink.Constants.EXTRA_RUNNING;
+import static com.pixmob.droidlink.Constants.NEW_EVENT_NOTIFICATION;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_EVENT_LIST_VISIBLE;
 import android.accounts.Account;
@@ -95,7 +96,7 @@ public class EventsActivity extends FragmentActivity {
         prefsEditor.putBoolean(SP_KEY_EVENT_LIST_VISIBLE, true);
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
         
-        notificationManager.cancel(R.string.received_new_event);
+        notificationManager.cancel(NEW_EVENT_NOTIFICATION);
     }
     
     @Override
@@ -110,17 +111,17 @@ public class EventsActivity extends FragmentActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE == id) {
-            return new AlertDialog.Builder(this).setTitle(R.string.error).setIcon(
-                R.drawable.ic_dialog_alert).setCancelable(false).setMessage(
-                R.string.no_account_available).setPositiveButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // There is no Google account on this device:
-                        // the application cannot run.
-                        finish();
-                    }
-                }).create();
+            return new AlertDialog.Builder(this).setTitle(R.string.error)
+                    .setIcon(R.drawable.ic_dialog_alert).setCancelable(false)
+                    .setMessage(R.string.no_account_available)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // There is no Google account on this device:
+                            // the application cannot run.
+                            finish();
+                        }
+                    }).create();
         }
         
         return super.onCreateDialog(id);
