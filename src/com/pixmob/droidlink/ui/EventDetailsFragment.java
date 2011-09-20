@@ -49,6 +49,7 @@ import android.provider.ContactsContract.PhoneLookup;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
 import android.telephony.TelephonyManager;
@@ -83,6 +84,11 @@ public class EventDetailsFragment extends Fragment {
     private TextView messageView;
     private Uri eventUri;
     private String number;
+    private boolean largeScreenLayout;
+    
+    public void setLargeScreenLayout(boolean largeScreenLayout) {
+        this.largeScreenLayout = largeScreenLayout;
+    }
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -116,12 +122,12 @@ public class EventDetailsFragment extends Fragment {
         if (deviceIsPhone) {
             menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(R.drawable.ic_menu_call)
                     .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
-            menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms).setIcon(
-                R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+            menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms)
+                    .setIcon(R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
         }
         
-        menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event).setIcon(
-            R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
+        menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event)
+                .setIcon(R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
     }
     
     @Override
@@ -173,7 +179,14 @@ public class EventDetailsFragment extends Fragment {
             }
         };
         deleteEventTask.start();
-        getActivity().finish();
+        
+        if (largeScreenLayout) {
+            final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.hide(EventDetailsFragment.this);
+            ft.commit();
+        } else {
+            getActivity().finish();
+        }
     }
     
     @Override
@@ -183,6 +196,9 @@ public class EventDetailsFragment extends Fragment {
     }
     
     private void initFields() {
+        if (eventUri == null) {
+            return;
+        }
         final Cursor cursor = getActivity().getContentResolver().query(eventUri, EVENT_PROJECTION,
             null, null, null);
         if (cursor == null) {
@@ -243,7 +259,7 @@ public class EventDetailsFragment extends Fragment {
     public void setEvent(Uri eventUri) {
         this.eventUri = eventUri;
         
-        if (isVisible()) {
+        if (dateView != null) {
             initFields();
         }
     }
@@ -271,8 +287,9 @@ public class EventDetailsFragment extends Fragment {
         protected Drawable doInBackground(Void... params) {
             // First, the contact identifier is searched from its phone number.
             final ContentResolver contentResolver = fragment.getActivity().getContentResolver();
-            Cursor c = contentResolver.query(Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(number)), new String[] { BaseColumns._ID }, null, null, null);
+            Cursor c = contentResolver.query(
+                Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number)),
+                new String[] { BaseColumns._ID }, null, null, null);
             int contactKey = -1;
             try {
                 if (c.moveToNext()) {
@@ -290,8 +307,8 @@ public class EventDetailsFragment extends Fragment {
             Drawable contactPicture = null;
             if (contactKey != -1) {
                 // Then, we look for the contact picture.
-                final InputStream input = Contacts.openContactPhotoInputStream(contentResolver, Uri
-                        .withAppendedPath(Contacts.CONTENT_URI, String.valueOf(contactKey)));
+                final InputStream input = Contacts.openContactPhotoInputStream(contentResolver,
+                    Uri.withAppendedPath(Contacts.CONTENT_URI, String.valueOf(contactKey)));
                 if (input != null) {
                     // The contact has a profile picture.
                     contactPicture = Drawable.createFromStream(input, "contactpicture");
@@ -316,19 +333,19 @@ public class EventDetailsFragment extends Fragment {
     public static class ConfirmEventDeletionDialog extends DialogFragment {
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            return new AlertDialog.Builder(getActivity()).setIcon(
-                android.R.drawable.ic_dialog_alert).setMessage(R.string.confirm_delete_event)
-                    .setTitle(R.string.delete_event).setNegativeButton(android.R.string.cancel,
-                        null).setPositiveButton(android.R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                final EventDetailsFragment fragment = (EventDetailsFragment) ((FragmentActivity) getActivity())
-                                        .getSupportFragmentManager().findFragmentById(
-                                            R.id.event_details);
-                                fragment.onDeleteEvent();
-                            }
-                        }).create();
+            return new AlertDialog.Builder(getActivity())
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setMessage(R.string.confirm_delete_event).setTitle(R.string.delete_event)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            final EventDetailsFragment fragment = (EventDetailsFragment) ((FragmentActivity) getActivity())
+                                    .getSupportFragmentManager().findFragmentById(
+                                        R.id.event_details);
+                            fragment.onDeleteEvent();
+                        }
+                    }).create();
         }
     }
 }

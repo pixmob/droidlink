@@ -70,6 +70,9 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         setListAdapter(cursorAdapter);
         setHasOptionsMenu(true);
         
+        // One event selected at a time.
+        getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        
         // The list is hidden until event cursor is loaded.
         setListShown(false);
         setEmptyText(getString(R.string.no_events));
@@ -137,6 +140,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
+        l.setItemChecked(position, true);
         
         final String eventId = (String) v.getTag(EventCursorAdapter.TAG_ID);
         Log.i(TAG, "Opening event details for " + eventId);

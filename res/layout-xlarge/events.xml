@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent" android:layout_height="fill_parent" android:orientation="vertical">
+    <View android:background="@color/nav_divider_color" android:layout_width="fill_parent"
+        android:layout_height="1dip" />
+    <LinearLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
+        android:orientation="horizontal">
+        <fragment android:name="com.pixmob.droidlink.ui.EventsFragment" android:id="@+id/events"
+            android:layout_width="0dip" android:layout_height="fill_parent" android:layout_weight="0.4" />
+        <fragment android:name="com.pixmob.droidlink.ui.EventDetailsFragment" android:id="@+id/event_details"
+            android:layout_width="0dip" android:layout_height="fill_parent" android:layout_weight="0.6"
+            android:layout_marginTop="4dip" android:layout_marginLeft="8dip" />
+    </LinearLayout>
+</LinearLayout>
