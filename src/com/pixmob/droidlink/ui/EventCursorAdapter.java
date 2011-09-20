@@ -53,6 +53,7 @@ class EventCursorAdapter extends SimpleCursorAdapter {
         EVENT_ICONS.put(EventsContract.MISSED_CALL_TYPE, R.drawable.ic_missed_call);
         EVENT_ICONS.put(EventsContract.RECEIVED_SMS_TYPE, R.drawable.ic_sms_mms);
     }
+    private static final String EMPTY = " ";
     
     public EventCursorAdapter(Context context, Cursor c) {
         super(context, R.layout.event_row, c, FROM, TO, 0);
@@ -78,10 +79,10 @@ class EventCursorAdapter extends SimpleCursorAdapter {
         final String eventNumber;
         if (number == null) {
             eventName = context.getString(R.string.unknown_number);
-            eventNumber = null;
+            eventNumber = EMPTY;
         } else if (name == null) {
             eventName = number;
-            eventNumber = null;
+            eventNumber = EMPTY;
         } else {
             eventName = name;
             eventNumber = number;
