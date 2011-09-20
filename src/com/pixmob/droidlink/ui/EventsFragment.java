@@ -27,6 +27,9 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
+
+import java.lang.ref.WeakReference;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -56,6 +59,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
             MESSAGE };
     private EventCursorAdapter cursorAdapter;
     private SharedPreferences prefs;
+    private WeakReference<OnEventSelectionListener> selectionListenerRef;
     
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -138,7 +142,16 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         Log.i(TAG, "Opening event details for " + eventId);
         
         final Uri eventUri = Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId);
-        startActivity(new Intent(getActivity(), EventDetailsActivity.class).setData(eventUri));
+        if (selectionListenerRef != null) {
+            final OnEventSelectionListener selectionListener = selectionListenerRef.get();
+            if (selectionListener != null) {
+                try {
+                    selectionListener.onEventSelected(eventUri);
+                } catch (Exception e) {
+                    Log.e(TAG, "Event selection listener error", e);
+                }
+            }
+        }
     }
     
     @Override
@@ -162,5 +175,10 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         cursorAdapter.swapCursor(null);
+    }
+    
+    public void setOnEventSelectionListener(OnEventSelectionListener l) {
+        this.selectionListenerRef = l != null ? new WeakReference<OnEventSelectionListener>(l)
+                : null;
     }
 }

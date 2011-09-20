@@ -32,8 +32,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActionBar;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.Window;
 
@@ -46,11 +48,31 @@ import com.pixmob.droidlink.util.Accounts;
  * Application entry point, displaying events thanks to {@link EventsFragment}.
  * @author Pixmob
  */
-public class EventsActivity extends FragmentActivity {
+public class EventsActivity extends FragmentActivity implements OnEventSelectionListener {
     private static final int NO_ACCOUNT_AVAILABLE = 1;
     private NotificationManager notificationManager;
     private SyncActionReceiver syncActionReceiver;
     private SharedPreferences.Editor prefsEditor;
+    
+    @Override
+    public void onEventSelected(Uri eventUri) {
+        final EventDetailsFragment df = (EventDetailsFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.event_details);
+        if (df == null) {
+            startActivity(new Intent(this, EventDetailsActivity.class).setData(eventUri));
+        } else {
+            df.setEvent(eventUri);
+        }
+    }
+    
+    @Override
+    public void onAttachFragment(Fragment fragment) {
+        super.onAttachFragment(fragment);
+        if (fragment instanceof EventsFragment) {
+            final EventsFragment ef = (EventsFragment) fragment;
+            ef.setOnEventSelectionListener(this);
+        }
+    }
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,17 +135,17 @@ public class EventsActivity extends FragmentActivity {
     @Override
     protected Dialog onCreateDialog(int id) {
         if (NO_ACCOUNT_AVAILABLE == id) {
-            return new AlertDialog.Builder(this).setTitle(R.string.error)
-                    .setIcon(R.drawable.ic_dialog_alert).setCancelable(false)
-                    .setMessage(R.string.no_account_available)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            // There is no Google account on this device:
-                            // the application cannot run.
-                            finish();
-                        }
-                    }).create();
+            return new AlertDialog.Builder(this).setTitle(R.string.error).setIcon(
+                R.drawable.ic_dialog_alert).setCancelable(false).setMessage(
+                R.string.no_account_available).setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // There is no Google account on this device:
+                        // the application cannot run.
+                        finish();
+                    }
+                }).create();
         }
         
         return super.onCreateDialog(id);
