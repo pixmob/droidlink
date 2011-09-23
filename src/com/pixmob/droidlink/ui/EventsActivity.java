@@ -112,8 +112,6 @@ public class EventsActivity extends FragmentActivity implements OnEventSelection
             final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.hide(details);
             ft.commit();
-            
-            ((EventDetailsFragment) details).setLargeScreenLayout(true);
         }
     }
     

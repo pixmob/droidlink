@@ -84,11 +84,6 @@ public class EventDetailsFragment extends Fragment {
     private TextView messageView;
     private Uri eventUri;
     private String number;
-    private boolean largeScreenLayout;
-    
-    public void setLargeScreenLayout(boolean largeScreenLayout) {
-        this.largeScreenLayout = largeScreenLayout;
-    }
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -180,7 +175,7 @@ public class EventDetailsFragment extends Fragment {
         };
         deleteEventTask.start();
         
-        if (largeScreenLayout) {
+        if (getResources().getBoolean(R.bool.large_screen)) {
             final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.hide(EventDetailsFragment.this);
             ft.commit();
