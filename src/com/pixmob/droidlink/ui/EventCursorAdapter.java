@@ -45,8 +45,6 @@ import com.pixmob.droidlink.provider.EventsContract;
  */
 class EventCursorAdapter extends SimpleCursorAdapter {
     public static final int TAG_ID = R.id.event_date;
-    private static final int[] TO = new int[] { R.id.event_name, R.id.event_number,
-            R.id.event_date, R.id.event_message };
     private static final String[] FROM = new String[] { NAME, NUMBER, CREATED, MESSAGE };
     private static final Map<Integer, Integer> EVENT_ICONS = new HashMap<Integer, Integer>(2);
     static {
@@ -55,8 +53,8 @@ class EventCursorAdapter extends SimpleCursorAdapter {
     }
     private static final String EMPTY = " ";
     
-    public EventCursorAdapter(Context context, Cursor c) {
-        super(context, R.layout.event_row, c, FROM, TO, 0);
+    public EventCursorAdapter(Context context) {
+        super(context, R.layout.event_row, null, FROM, null, 0);
     }
     
     @Override
@@ -69,9 +67,8 @@ class EventCursorAdapter extends SimpleCursorAdapter {
         final int type = cursor.getInt(cursor.getColumnIndexOrThrow(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
-            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
-            DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
+                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
         
         final String message = cursor.getString(cursor.getColumnIndexOrThrow(MESSAGE));
         

@@ -36,9 +36,9 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.DialogInterface.OnClickListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -78,7 +78,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         super.onActivityCreated(savedInstanceState);
         prefs = getActivity().getSharedPreferences(SHARED_PREFERENCES_FILE, Context.MODE_PRIVATE);
         
-        cursorAdapter = new EventCursorAdapter(getActivity(), null);
+        cursorAdapter = new EventCursorAdapter(getActivity());
         setListAdapter(cursorAdapter);
         setHasOptionsMenu(true);
         
@@ -99,6 +99,15 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         
         // Refresh events.
         getLoaderManager().restartLoader(0, null, this);
+    }
+    
+    @Override
+    public void onDetach() {
+        final Loader<Cursor> loader = getLoaderManager().getLoader(0);
+        if (loader != null) {
+            loader.reset();
+        }
+        super.onDetach();
     }
     
     @Override
@@ -181,8 +190,10 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
     
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(getActivity(), EventsContract.CONTENT_URI, EVENT_COLUMNS, null,
-                null, null);
+        final CursorLoader loader = new CursorLoader(getActivity(), EventsContract.CONTENT_URI,
+                EVENT_COLUMNS, null, null, null);
+        loader.setUpdateThrottle(1000);
+        return loader;
     }
     
     @Override
