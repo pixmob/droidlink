@@ -17,7 +17,6 @@ package com.pixmob.droidlink.service;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
-import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_MISSED_CALLS;
 import static com.pixmob.droidlink.Constants.TAG;
@@ -92,10 +91,7 @@ public class MissedCallHandlerService extends ActionService {
                         writeMissedCallEvent(fromNumber, fromName, callTime);
                         
                         // Start synchronization.
-                        final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
-                        if (accountName != null) {
-                            EventsContract.sync(accountName, EventsContract.LIGHT_SYNC);
-                        }
+                        EventsContract.sync(this, EventsContract.LIGHT_SYNC);
                     } else {
                         if (DEVELOPER_MODE) {
                             Log.w(TAG, "Missed call not found!");

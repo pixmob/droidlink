@@ -17,7 +17,6 @@ package com.pixmob.droidlink.service;
 
 import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
-import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import static com.pixmob.droidlink.Constants.SP_KEY_DEVICE_ID;
 import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import static com.pixmob.droidlink.Constants.TAG;
@@ -99,16 +98,13 @@ public class SmsHandlerService extends ActionService {
             
             Log.i(TAG, "Got SMS: number=" + fromAddress + ", name=" + fromDisplayName + ", time="
                     + message.getTimestampMillis());
-            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(),
-                message.getTimestampMillis());
+            writeSmsEvent(fromAddress, fromDisplayName, message.getMessageBody(), message
+                    .getTimestampMillis());
         }
         
         if (pdus.length != 0) {
             // Start synchronization.
-            final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
-            if (accountName != null) {
-                EventsContract.sync(accountName, EventsContract.LIGHT_SYNC);
-            }
+            EventsContract.sync(this, EventsContract.LIGHT_SYNC);
         }
     }
     

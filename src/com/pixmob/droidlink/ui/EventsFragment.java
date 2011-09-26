@@ -160,11 +160,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
      * Start event synchronization.
      */
     private void onRefresh() {
-        // Check if an account is set.
-        final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
-        if (accountName != null) {
-            EventsContract.sync(accountName, EventsContract.FULL_SYNC);
-        }
+        EventsContract.sync(getActivity(), EventsContract.FULL_SYNC);
     }
     
     @Override

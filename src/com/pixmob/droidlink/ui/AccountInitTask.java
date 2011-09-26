@@ -130,15 +130,17 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
             }
             ContentResolver.setSyncAutomatically(new Account(newAccount, GOOGLE_ACCOUNT),
                 EventsContract.AUTHORITY, true);
-            
-            // Start synchronization.
-            EventsContract.sync(newAccount, EventsContract.FULL_SYNC);
         } else {
             // Restore old account.
             prefsEditor.putString(SP_KEY_ACCOUNT, oldAccount);
         }
         
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+        
+        if (AUTH_OK == authResult) {
+            // Start synchronization.
+            EventsContract.sync(getFragment().getActivity(), EventsContract.FULL_SYNC);
+        }
         
         return authResult;
     }

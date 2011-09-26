@@ -16,15 +16,25 @@
 package com.pixmob.droidlink.provider;
 
 import static com.pixmob.droidlink.Constants.GOOGLE_ACCOUNT;
+import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
+import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
+import static com.pixmob.droidlink.Constants.TAG;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import android.accounts.Account;
 import android.content.ContentResolver;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 /**
  * The contract between the Events provider and applications.
@@ -38,6 +48,17 @@ public class EventsContract {
     public static final int PENDING_UPLOAD_STATE = 0;
     public static final int UPLOADED_STATE = 1;
     public static final int PENDING_DELETE_STATE = 2;
+    
+    private static final ThreadPoolExecutor SYNC_EXECUTOR = new ThreadPoolExecutor(0, 1, 60,
+            TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2), new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "DroidLink/Sync");
+                }
+            });
+    static {
+        SYNC_EXECUTOR.allowCoreThreadTimeOut(true);
+    }
     
     /**
      * Synchronization strategy: light or full. Set this key when calling
@@ -68,9 +89,13 @@ public class EventsContract {
     /**
      * Synchronize events for an account.
      */
-    public static void sync(String account, int syncType) {
+    public static void sync(Context context, int syncType) {
+        final SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_FILE,
+            Context.MODE_PRIVATE);
+        final String account = prefs.getString(SP_KEY_ACCOUNT, null);
         if (account == null) {
-            throw new IllegalArgumentException("Account is required");
+            Log.w(TAG, "No account set: cannot sync");
+            return;
         }
         if (syncType != FULL_SYNC && syncType != LIGHT_SYNC) {
             throw new IllegalArgumentException("Invalid sync type: " + syncType);
@@ -78,7 +103,7 @@ public class EventsContract {
         
         // Start event synchronization in a thread to avoid disk writes in the
         // main thread.
-        new EventsRefresher(account, syncType).start();
+        SYNC_EXECUTOR.execute(new EventsRefresher(account, syncType));
     }
     
     /**
@@ -112,13 +137,12 @@ public class EventsContract {
      * Internal task for refreshing events.
      * @author Pixmob
      */
-    private static class EventsRefresher extends Thread {
+    private static class EventsRefresher implements Runnable {
         private final Logger logger = Logger.getLogger(getClass().getName());
         private final String account;
         private final int syncType;
         
         public EventsRefresher(final String account, final int syncType) {
-            super("DroidLink/EventsRefresher");
             this.account = account;
             this.syncType = syncType;
         }
