@@ -71,6 +71,7 @@
         <service android:name=".service.MissedCallHandlerService"></service>
         <service android:name=".service.SmsHandlerService"></service>
         <service android:name=".service.DeviceInitService"></service>
+        <service android:name=".service.EventPurgeService"></service>
         <service android:name=".C2DMReceiver" />
 
         <service android:name=".service.SyncNotificationService">

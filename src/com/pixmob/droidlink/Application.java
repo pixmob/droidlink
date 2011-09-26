@@ -19,6 +19,8 @@ import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
 import android.accounts.Account;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
@@ -26,6 +28,7 @@ import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.feature.StrictModeFeature;
 import com.pixmob.droidlink.service.DeviceInitService;
+import com.pixmob.droidlink.service.EventPurgeService;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -54,5 +57,11 @@ public class Application extends android.app.Application {
         
         // Make sure a device id is generated for this device.
         startService(new Intent(this, DeviceInitService.class));
+        
+        // Purge older events every hour.
+        final AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+        am.setInexactRepeating(AlarmManager.RTC, 0, AlarmManager.INTERVAL_HOUR, PendingIntent
+                .getService(this, 0, new Intent(this, EventPurgeService.class),
+                    PendingIntent.FLAG_CANCEL_CURRENT));
     }
 }

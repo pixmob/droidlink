@@ -53,6 +53,7 @@ public final class Constants {
     public static final String SP_KEY_DEVICE_C2DM = "deviceC2dm";
     public static final String SP_KEY_EVENT_LIST_VISIBLE = "eventListVisible";
     public static final String SP_KEY_UNREAD_EVENT_COUNT = "unreadEventCount";
+    public static final String SP_KEY_EVENT_MAX_AGE = "eventMaxAge";
     
     public static final String C2DM_SENDER_ID = "pixmobstudio@gmail.com";
     public static final String C2DM_MESSAGE_EXTRA = "message";
