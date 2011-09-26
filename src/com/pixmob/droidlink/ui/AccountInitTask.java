@@ -35,6 +35,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 
 import com.pixmob.appengine.client.AppEngineAuthenticationException;
@@ -53,14 +54,14 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
     private static final int AUTH_OK = 0;
     private static final int AUTH_FAIL = 1;
     private static final int AUTH_PENDING = 2;
-    private final AccountsFragment fragment;
+    private final Fragment fragment;
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor prefsEditor;
     private final ContentResolver contentResolver;
     private final Account[] accounts;
     private Intent authPendingIntent;
     
-    public AccountInitTask(final AccountsFragment fragment) {
+    public AccountInitTask(final Fragment fragment) {
         this.fragment = fragment;
         
         final Activity context = fragment.getActivity();
@@ -68,6 +69,10 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         prefsEditor = prefs.edit();
         contentResolver = context.getContentResolver();
         accounts = Accounts.list(context);
+    }
+    
+    protected Fragment getFragment() {
+        return fragment;
     }
     
     @Override

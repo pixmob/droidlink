@@ -18,18 +18,13 @@ package com.pixmob.droidlink.ui;
 import static com.pixmob.droidlink.Constants.TAG;
 import android.accounts.Account;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
-import com.pixmob.droidlink.R;
 import com.pixmob.droidlink.util.Accounts;
 
 /**
@@ -40,14 +35,13 @@ public class AccountsFragment extends ListFragment {
     private static final int GRANT_AUTH_PERMISSION_REQUEST = 1;
     private AccountAdapter accountAdapter;
     private String selectedAccount;
-    private InternalAccountInitTask task;
-    private AuthDialog authDialog;
+    private AuthenticationProgressDialog authDialog;
     
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         
-        authDialog = AuthDialog.newInstance();
+        authDialog = AuthenticationProgressDialog.newInstance();
         
         final Account[] accounts = Accounts.list(getActivity());
         if (accounts.length == 0) {
@@ -96,8 +90,7 @@ public class AccountsFragment extends ListFragment {
     }
     
     private void checkAccount() {
-        task = new InternalAccountInitTask();
-        task.execute(selectedAccount);
+        new InternalAccountInitTask().execute(selectedAccount);
     }
     
     /**
@@ -125,48 +118,13 @@ public class AccountsFragment extends ListFragment {
         @Override
         protected void onAuthenticationError() {
             authDialog.dismiss();
-            ErrorDialog.newInstance().show(getSupportFragmentManager(), "error");
+            AuthenticationErrorDialog.newInstance().show(getSupportFragmentManager(), "error");
         }
         
         @Override
         protected void onAuthenticationPending(Intent authPendingIntent) {
             authDialog.dismiss();
             getActivity().startActivityForResult(authPendingIntent, GRANT_AUTH_PERMISSION_REQUEST);
-        }
-    }
-    
-    /**
-     * Progress dialog when the authentication is running.
-     * @author Pixmob
-     */
-    public static class AuthDialog extends DialogFragment {
-        public static AuthDialog newInstance() {
-            return new AuthDialog();
-        }
-        
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final ProgressDialog dialog = new ProgressDialog(getActivity());
-            dialog.setCancelable(false);
-            dialog.setMessage(getString(R.string.auth_pending));
-            return dialog;
-        }
-    }
-    
-    /**
-     * Error dialog when the authentication failed.
-     * @author Pixmob
-     */
-    public static class ErrorDialog extends DialogFragment {
-        public static ErrorDialog newInstance() {
-            return new ErrorDialog();
-        }
-        
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            return new AlertDialog.Builder(getActivity()).setTitle(R.string.error).setIcon(
-                R.drawable.ic_dialog_alert).setMessage(R.string.auth_error).setPositiveButton(
-                android.R.string.ok, null).create();
         }
     }
 }
