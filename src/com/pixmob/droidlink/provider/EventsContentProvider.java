@@ -39,7 +39,6 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
@@ -67,19 +66,12 @@ public class EventsContentProvider extends ContentProvider {
         URI_MATCHER.addURI(EventsContract.AUTHORITY, "events/*", EVENT_ID);
     }
     
-    private SQLiteDatabase db;
+    private SQLiteOpenHelper dbHelper;
     
     @Override
     public boolean onCreate() {
-        final EventsDatabaseHelper dbHelper = new EventsDatabaseHelper(getContext(), DATABASE_NAME,
-                null, DATABASE_VERSION);
-        try {
-            db = dbHelper.getWritableDatabase();
-        } catch (SQLiteException e) {
-            Log.e(TAG, "Database opening error", e);
-        }
-        
-        return db != null;
+        dbHelper = new EventsDatabaseHelper(getContext(), DATABASE_NAME, null, DATABASE_VERSION);
+        return true;
     }
     
     @Override
@@ -115,6 +107,7 @@ public class EventsContentProvider extends ContentProvider {
             orderBy = sortOrder;
         }
         
+        final SQLiteDatabase db = dbHelper.getReadableDatabase();
         final Cursor c = qb.query(db, projection, selection, selectionArgs, null, null, orderBy);
         c.setNotificationUri(getContext().getContentResolver(), uri);
         
@@ -123,6 +116,7 @@ public class EventsContentProvider extends ContentProvider {
     
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
         final int count;
         
         switch (URI_MATCHER.match(uri)) {
@@ -173,6 +167,7 @@ public class EventsContentProvider extends ContentProvider {
             }
         }
         
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
         final long rowID = db.insert(EVENTS_TABLE, "not_null", values);
         if (rowID == -1) {
             throw new SQLException("Failed to insert row into " + uri);
@@ -185,6 +180,7 @@ public class EventsContentProvider extends ContentProvider {
     
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
         final int count;
         switch (URI_MATCHER.match(uri)) {
             case EVENTS:
