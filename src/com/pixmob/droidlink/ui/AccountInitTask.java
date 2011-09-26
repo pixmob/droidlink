@@ -82,9 +82,8 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         
         // Make sure this user has an unique device identifier.
         if (!newAccount.equals(oldAccount)) {
-            prefsEditor.putString(SP_KEY_DEVICE_ID,
-                DeviceUtils.getDeviceId(fragment.getActivity(), newAccount));
-            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+            prefsEditor.putString(SP_KEY_DEVICE_ID, DeviceUtils.getDeviceId(fragment.getActivity(),
+                newAccount));
         }
         
         prefsEditor.putString(SP_KEY_ACCOUNT, newAccount);
