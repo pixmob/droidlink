@@ -127,9 +127,7 @@ public class DeviceInitService extends AbstractNetworkService {
         
         final NetworkClient client = NetworkClient.newInstance(this);
         if (client != null) {
-            final Notification n = Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB ? createLegacyNotification(
-                this, client.getAccount(), openMainActivity) : createHoneycombNotification(this,
-                client.getAccount(), openMainActivity);
+            final Notification n = createNotification(this, client.getAccount(), openMainActivity);
             startForeground(R.string.device_setup_running, n);
             
             try {
@@ -159,22 +157,11 @@ public class DeviceInitService extends AbstractNetworkService {
         }
     }
     
-    private static Notification createLegacyNotification(Context context, String account,
-            PendingIntent pi) {
-        final Notification n = new Notification(android.R.drawable.stat_notify_sync,
-                context.getString(R.string.device_setup_running), System.currentTimeMillis());
-        n.setLatestEventInfo(context.getApplicationContext(),
-            context.getString(R.string.device_setup_running), account, pi);
+    private static Notification createNotification(Context context, String account, PendingIntent pi) {
+        final Notification n = new Notification(android.R.drawable.stat_notify_sync, context
+                .getString(R.string.device_setup_running), System.currentTimeMillis());
+        n.setLatestEventInfo(context.getApplicationContext(), context
+                .getString(R.string.device_setup_running), account, pi);
         return n;
-    }
-    
-    private static Notification createHoneycombNotification(Context context, String account,
-            PendingIntent pi) {
-        return new Notification.Builder(context.getApplicationContext()).setAutoCancel(true)
-                .setSmallIcon(android.R.drawable.stat_notify_sync)
-                .setTicker(context.getString(R.string.device_setup_running))
-                .setWhen(System.currentTimeMillis()).setContentIntent(pi)
-                .setContentTitle(context.getString(R.string.device_setup_running))
-                .setContentText(account).getNotification();
     }
 }

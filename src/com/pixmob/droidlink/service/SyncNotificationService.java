@@ -31,7 +31,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
 
 import com.pixmob.actionservice.ActionExecutionFailedException;
@@ -95,38 +94,24 @@ public class SyncNotificationService extends ActionService {
             Log.i(TAG, "Add event notification for " + unreadEventCount + " events");
         } else {
             final Uri eventUri = Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId);
-            pi = PendingIntent.getActivity(this, 0,
-                new Intent(this, EventDetailsActivity.class).setData(eventUri),
-                PendingIntent.FLAG_CANCEL_CURRENT);
+            pi = PendingIntent.getActivity(this, 0, new Intent(this, EventDetailsActivity.class)
+                    .setData(eventUri), PendingIntent.FLAG_CANCEL_CURRENT);
             Log.i(TAG, "Add event notification for a single event");
         }
         
         final String account = prefs.getString(SP_KEY_ACCOUNT, null);
-        final Notification n = Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB ? createLegacyNotification(
-            this, account, unreadEventCount, pi) : createHoneycombNotification(this, account,
-            unreadEventCount, pi);
+        final Notification n = createNotification(this, account, unreadEventCount, pi);
         notificationManager.notify(NEW_EVENT_NOTIFICATION, n);
     }
     
-    private static Notification createLegacyNotification(Context context, String account,
+    private static Notification createNotification(Context context, String account,
             int unreadEventCount, PendingIntent pi) {
-        final Notification n = new Notification(R.drawable.stat_notify_new_event,
-                context.getString(R.string.received_new_event), System.currentTimeMillis());
+        final Notification n = new Notification(R.drawable.stat_notify_new_event, context
+                .getString(R.string.received_new_event), System.currentTimeMillis());
         n.defaults = Notification.DEFAULT_ALL;
-        n.setLatestEventInfo(context.getApplicationContext(),
-            context.getString(R.string.received_new_event), account, pi);
+        n.setLatestEventInfo(context.getApplicationContext(), context
+                .getString(R.string.received_new_event), account, pi);
         n.number = unreadEventCount;
         return n;
-    }
-    
-    private static Notification createHoneycombNotification(Context context, String account,
-            int unreadEventCount, PendingIntent pi) {
-        return new Notification.Builder(context.getApplicationContext()).setAutoCancel(true)
-                .setSmallIcon(R.drawable.stat_notify_new_event)
-                .setTicker(context.getString(R.string.received_new_event))
-                .setWhen(System.currentTimeMillis()).setContentIntent(pi)
-                .setContentTitle(context.getString(R.string.received_new_event))
-                .setContentText(account).setDefaults(Notification.DEFAULT_ALL)
-                .setNumber(unreadEventCount).getNotification();
     }
 }
