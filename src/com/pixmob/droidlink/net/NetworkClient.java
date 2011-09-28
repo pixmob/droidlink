@@ -33,7 +33,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -141,12 +140,6 @@ public class NetworkClient {
     
     public void delete(String serviceUri) throws IOException, AppEngineAuthenticationException {
         execute(HttpMethod.DELETE, serviceUri, null);
-    }
-    
-    public boolean isModified(String serviceUri, long since) throws IOException,
-            AppEngineAuthenticationException {
-        final HttpHead req = new HttpHead(serviceUri);
-        return execute(req).getStatusLine().getStatusCode() != 204;
     }
     
     public void close() {
