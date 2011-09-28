@@ -161,7 +161,7 @@ public class EventDetailsFragment extends Fragment {
                 cv.put(EventsContract.Event.STATE, EventsContract.PENDING_DELETE_STATE);
                 getActivity().getContentResolver().update(eventUri, cv, null, null);
                 
-                EventsContract.sync(getActivity(), EventsContract.LIGHT_SYNC);
+                EventsContract.sync(getActivity(), EventsContract.LIGHT_SYNC, null);
             }
         };
         deleteEventTask.start();

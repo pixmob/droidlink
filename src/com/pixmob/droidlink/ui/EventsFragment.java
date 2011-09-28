@@ -53,6 +53,7 @@ import android.support.v4.view.MenuItem;
 import android.util.Log;
 import android.view.MenuInflater;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.ListView;
 
 import com.pixmob.droidlink.R;
@@ -83,7 +84,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
         setHasOptionsMenu(true);
         
         // One event selected at a time.
-        getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        getListView().setChoiceMode(AbsListView.CHOICE_MODE_SINGLE);
         
         // The list is hidden until event cursor is loaded.
         setListShown(false);
@@ -160,7 +161,7 @@ public class EventsFragment extends ListFragment implements LoaderCallbacks<Curs
      * Start event synchronization.
      */
     private void onRefresh() {
-        EventsContract.sync(getActivity(), EventsContract.FULL_SYNC);
+        EventsContract.sync(getActivity(), EventsContract.FULL_SYNC, null);
     }
     
     @Override

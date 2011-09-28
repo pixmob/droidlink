@@ -61,6 +61,11 @@ public class EventsContract {
     }
     
     /**
+     * Synchronization token. This key is set from the request sent by the
+     * server to uniquely identify synchronization requests across devices.
+     */
+    public static final String SYNC_TOKEN = "syncToken";
+    /**
      * Synchronization strategy: light or full. Set this key when calling
      * <code>ContentResolver.requestSync</code> to specify how the
      * synchronization should be done.
@@ -89,7 +94,7 @@ public class EventsContract {
     /**
      * Synchronize events for an account.
      */
-    public static void sync(Context context, int syncType) {
+    public static void sync(Context context, int syncType, String syncToken) {
         final SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFERENCES_FILE,
             Context.MODE_PRIVATE);
         final String account = prefs.getString(SP_KEY_ACCOUNT, null);
@@ -103,7 +108,7 @@ public class EventsContract {
         
         // Start event synchronization in a thread to avoid disk writes in the
         // main thread.
-        SYNC_EXECUTOR.execute(new EventsRefresher(account, syncType));
+        SYNC_EXECUTOR.execute(new EventsRefresher(account, syncType, syncToken));
     }
     
     /**
@@ -141,10 +146,12 @@ public class EventsContract {
         private final Logger logger = Logger.getLogger(getClass().getName());
         private final String account;
         private final int syncType;
+        private final String syncToken;
         
-        public EventsRefresher(final String account, final int syncType) {
+        public EventsRefresher(final String account, final int syncType, final String syncToken) {
             this.account = account;
             this.syncType = syncType;
+            this.syncToken = syncToken;
         }
         
         @Override
@@ -153,6 +160,9 @@ public class EventsContract {
                 final Bundle options = new Bundle();
                 options.putInt(EventsContract.SYNC_STRATEGY, syncType);
                 options.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+                if (syncToken != null) {
+                    options.putString(EventsContract.SYNC_TOKEN, syncToken);
+                }
                 ContentResolver.requestSync(new Account(account, GOOGLE_ACCOUNT),
                     EventsContract.AUTHORITY, options);
             } catch (Exception e) {

@@ -139,7 +139,7 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         
         if (AUTH_OK == authResult) {
             // Start synchronization.
-            EventsContract.sync(getFragment().getActivity(), EventsContract.FULL_SYNC);
+            EventsContract.sync(getFragment().getActivity(), EventsContract.FULL_SYNC, null);
         }
         
         return authResult;

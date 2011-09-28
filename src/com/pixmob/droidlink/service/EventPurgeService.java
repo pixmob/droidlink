@@ -66,6 +66,6 @@ public class EventPurgeService extends ActionService {
             new String[] { String.valueOf(maxCreated) });
         
         // Start event synchronization.
-        EventsContract.sync(this, EventsContract.LIGHT_SYNC);
+        EventsContract.sync(this, EventsContract.LIGHT_SYNC, null);
     }
 }

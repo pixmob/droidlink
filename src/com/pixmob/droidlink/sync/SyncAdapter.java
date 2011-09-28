@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -72,6 +73,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String[] PROJECTION = { _ID, TYPE, CREATED, NUMBER, NAME, MESSAGE, STATE };
     private static final String[] PROJECTION_ID = { _ID };
     private static final String SP_KEY_LAST_SYNC = "lastSync";
+    private static final String SP_KEY_SYNC_TOKEN = "syncToken";
     
     public SyncAdapter(final Context context) {
         super(context, false);
@@ -91,6 +93,17 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             ContentProviderClient provider, SyncResult syncResult) {
         final SharedPreferences prefs = getContext().getSharedPreferences(SHARED_PREFERENCES_FILE,
             Context.MODE_PRIVATE);
+        
+        final String lastSyncToken = prefs.getString(SP_KEY_SYNC_TOKEN, null);
+        final String syncToken = extras.getString(EventsContract.SYNC_TOKEN);
+        if (DEVELOPER_MODE) {
+            Log.d(TAG, "Sync token: " + syncToken + "; last sync token: " + lastSyncToken);
+        }
+        
+        if (lastSyncToken != null && lastSyncToken.equals(syncToken)) {
+            Log.w(TAG, "Skip synchronization since this device is already synchronized");
+            return;
+        }
         
         // Make sure this sync is about our user.
         final String accountName = prefs.getString(SP_KEY_ACCOUNT, null);
@@ -443,8 +456,32 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
         }
         
-        // Store sync time.
         final SharedPreferences.Editor prefsEditor = prefs.edit();
+        
+        final boolean syncRequired = !eventsToDelete.isEmpty() || !eventsToUpload.isEmpty();
+        if (syncRequired) {
+            // Generate an unique sync token: the server will send this token to
+            // every devices. If this token is received on this device, the sync
+            // will not start.
+            final String syncToken = UUID.randomUUID().toString();
+            prefsEditor.putString(SP_KEY_SYNC_TOKEN, syncToken);
+            Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+            
+            // Sync user devices.
+            try {
+                client.get("/devices/" + client.getDeviceId() + "/sync?token=" + syncToken);
+            } catch (IOException e) {
+                Log.e(TAG, "Device sync error: cannot sync", e);
+                syncResult.stats.numIoExceptions++;
+                return;
+            } catch (AppEngineAuthenticationException e) {
+                Log.e(TAG, "Authentication error: cannot sync", e);
+                syncResult.stats.numAuthExceptions++;
+                return;
+            }
+        }
+        
+        // Store sync time.
         prefsEditor.putLong(SP_KEY_LAST_SYNC, System.currentTimeMillis());
         Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
     }

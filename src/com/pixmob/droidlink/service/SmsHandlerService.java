@@ -104,7 +104,7 @@ public class SmsHandlerService extends ActionService {
         
         if (pdus.length != 0) {
             // Start synchronization.
-            EventsContract.sync(this, EventsContract.LIGHT_SYNC);
+            EventsContract.sync(this, EventsContract.LIGHT_SYNC, null);
         }
     }
     

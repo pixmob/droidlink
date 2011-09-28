@@ -59,6 +59,7 @@ public final class Constants {
     public static final String C2DM_MESSAGE_EXTRA = "message";
     public static final String C2DM_MESSAGE_SYNC = "sync";
     public static final String C2DM_ACCOUNT_EXTRA = "account";
+    public static final String C2DM_SYNC_EXTRA = "token";
     
     public static final String EXTRA_FORCE_UPLOAD = "upload";
     

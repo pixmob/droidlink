@@ -91,7 +91,7 @@ public class MissedCallHandlerService extends ActionService {
                         writeMissedCallEvent(fromNumber, fromName, callTime);
                         
                         // Start synchronization.
-                        EventsContract.sync(this, EventsContract.LIGHT_SYNC);
+                        EventsContract.sync(this, EventsContract.LIGHT_SYNC, null);
                     } else {
                         if (DEVELOPER_MODE) {
                             Log.w(TAG, "Missed call not found!");
