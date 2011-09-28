@@ -36,10 +36,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -178,15 +178,20 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         
         @Override
         protected Void doInBackground(Void... params) {
+            NetworkClient client = null;
             try {
                 Log.i(TAG, "Delete data");
                 
-                final NetworkClient client = NetworkClient.newInstance(activity);
+                client = NetworkClient.newInstance(activity);
                 if (client != null) {
                     client.delete("/events/all");
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Failed to delete data", e);
+            } finally {
+                if (client != null) {
+                    client.close();
+                }
             }
             
             return null;
