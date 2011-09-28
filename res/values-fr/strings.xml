@@ -13,8 +13,8 @@
     <string name="please_wait">Veuillez patienter</string>
     <string name="device_setup_running">Enregistrement de l\'appareil...</string>
     <string name="events_on_this_device">Evènements sur cet appareil</string>
-    <string name="ignore_missed_calls">Ignorer appels manqués</string>
-    <string name="ignore_received_sms">Ignorer SMS reçus</string>
+    <string name="ignore_missed_calls">Ignorer les appels manqués</string>
+    <string name="ignore_received_sms">Ignorer les SMS reçus</string>
     <string name="admin">Administration</string>
     <string name="delete_data">Effacer toutes les données</string>
     <string name="confirm_delete_data">Toutes les données associées au compte seront supprimées.</string>
@@ -26,4 +26,11 @@
     <string name="confirm_delete_event">Cet évènement sera supprimé définitivement.</string>
     <string name="missed_call">Appel manqué.</string>
     <string name="received_new_event">Nouvel évènement reçu</string>
+    <string name="set_event_lifetime">Supprimer les évènements</string>
+    <string name="delete_events_after">Supprimer après...</string>
+    <string name="one_day">1 jour</string>
+    <string name="three_days">3 jours</string>
+    <string name="one_week">1 semaine</string>
+    <string name="two_weeks">2 semaines</string>
+    <string name="one_month">1 mois</string>
 </resources>

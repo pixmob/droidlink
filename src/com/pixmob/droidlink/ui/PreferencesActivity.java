@@ -17,41 +17,62 @@ package com.pixmob.droidlink.ui;
 
 import static com.pixmob.droidlink.Constants.SHARED_PREFERENCES_FILE;
 import static com.pixmob.droidlink.Constants.SP_KEY_ACCOUNT;
+import static com.pixmob.droidlink.Constants.SP_KEY_EVENT_MAX_AGE;
 import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_MISSED_CALLS;
 import static com.pixmob.droidlink.Constants.SP_KEY_IGNORE_RECEIVED_SMS;
 import static com.pixmob.droidlink.Constants.TAG;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.ListPreference;
 import android.preference.Preference;
-import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.preference.Preference.OnPreferenceChangeListener;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.pixmob.droidlink.R;
+import com.pixmob.droidlink.feature.Features;
+import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
+import com.pixmob.droidlink.service.EventPurgeService;
 
 /**
  * Application preferences.
  * @author Pixmob
  */
 public class PreferencesActivity extends PreferenceActivity implements OnPreferenceClickListener {
+    private static final String DELETE_EVENTS_AFTER_PREF = "deleteEventsAfter";
     private static final String DELETE_DATA_PREF = "deleteData";
     private static final int DELETE_DATA_CONFIRM_DIALOG = 1;
     private static final int DELETE_DATA_PROGRESS_DIALOG = 2;
+    private final Map<CharSequence, Long> durations = new LinkedHashMap<CharSequence, Long>(5);
     private SharedPreferences prefs;
     private DeleteDataTask deleteDataTask;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        final long oneDay = 86400;
+        durations.clear();
+        durations.put(getString(R.string.one_day), oneDay);
+        durations.put(getString(R.string.three_days), oneDay * 3);
+        durations.put(getString(R.string.one_week), oneDay * 7);
+        durations.put(getString(R.string.two_weeks), oneDay * 7 * 2);
+        durations.put(getString(R.string.one_month), oneDay * 30);
         
         deleteDataTask = (DeleteDataTask) getLastNonConfigurationInstance();
         if (deleteDataTask != null) {
@@ -67,6 +88,28 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         
         final Preference purgeEventsPref = pm.findPreference(DELETE_DATA_PREF);
         purgeEventsPref.setOnPreferenceClickListener(this);
+        
+        final ListPreference deleteEventsAfterPrefs = (ListPreference) pm
+                .findPreference(DELETE_EVENTS_AFTER_PREF);
+        final CharSequence[] durationKeys = durations.keySet().toArray(
+            new CharSequence[durations.size()]);
+        deleteEventsAfterPrefs.setDefaultValue(durations.get(getString(R.string.one_week)));
+        deleteEventsAfterPrefs.setEntries(durationKeys);
+        deleteEventsAfterPrefs.setEntryValues(durationKeys);
+        deleteEventsAfterPrefs.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                // Save the real value (in seconds) in the preferences.
+                final SharedPreferences.Editor prefsEditor = prefs.edit();
+                prefsEditor.putLong(SP_KEY_EVENT_MAX_AGE, durations.get(newValue));
+                Features.getFeature(SharedPreferencesSaverFeature.class).save(prefsEditor);
+                
+                // Update local events with the new settings.
+                startService(new Intent(PreferencesActivity.this, EventPurgeService.class));
+                
+                return true;
+            }
+        });
         
         // Disable some preferences if this device is actually not a phone.
         final TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);

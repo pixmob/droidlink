@@ -52,7 +52,7 @@ public class EventPurgeService extends ActionService {
             InterruptedException {
         // If an event is older than this date, it is deleted.
         final long maxCreated = System.currentTimeMillis()
-                - prefs.getLong(SP_KEY_EVENT_MAX_AGE, 1000 * 86400 * 7);
+                - prefs.getLong(SP_KEY_EVENT_MAX_AGE, 86400 * 7) * 1000;
         
         Log.i(TAG, "Purge oldest events: limit set to '"
                 + DateUtils.formatDateTime(this, maxCreated, DateUtils.FORMAT_SHOW_DATE

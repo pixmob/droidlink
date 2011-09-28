@@ -27,4 +27,11 @@
     <string name="confirm_delete_event">This event will be permanently deleted.</string>
     <string name="missed_call">Missed call.</string>
     <string name="received_new_event">Received new event</string>
+    <string name="set_event_lifetime">Delete events</string>
+    <string name="delete_events_after">Delete after...</string>
+    <string name="one_day">1 day</string>
+    <string name="three_days">3 days</string>
+    <string name="one_week">1 week</string>
+    <string name="two_weeks">2 weeks</string>
+    <string name="one_month">1 month</string>
 </resources>

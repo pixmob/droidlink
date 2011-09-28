@@ -7,6 +7,7 @@
             android:key="ignoreReceivedSms"></CheckBoxPreference>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/admin">
-        <Preference android:key="deleteData" android:title="@string/delete_data"></Preference>
+        <ListPreference android:title="@string/set_event_lifetime" android:dialogTitle="@string/delete_events_after" android:key="deleteEventsAfter"></ListPreference><Preference android:key="deleteData" android:title="@string/delete_data"></Preference>
+        
     </PreferenceCategory>
 </PreferenceScreen>
