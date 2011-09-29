@@ -469,7 +469,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             
             // Sync user devices.
             try {
-                client.get("/devices/" + client.getDeviceId() + "/sync?token=" + syncToken);
+                final JSONObject data = new JSONObject();
+                data.put("token", syncToken);
+                client.post("/devices/" + client.getDeviceId() + "/sync", data);
             } catch (IOException e) {
                 Log.e(TAG, "Device sync error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
@@ -477,6 +479,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             } catch (AppEngineAuthenticationException e) {
                 Log.e(TAG, "Authentication error: cannot sync", e);
                 syncResult.stats.numAuthExceptions++;
+                return;
+            } catch (JSONException e) {
+                Log.w(TAG, "Invalid sync token " + syncToken + ": cannot sync", e);
+                syncResult.stats.numIoExceptions++;
                 return;
             }
         }
