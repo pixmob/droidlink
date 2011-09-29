@@ -81,9 +81,11 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         final String oldAccount = prefs.getString(SP_KEY_ACCOUNT, null);
         
         // Make sure this user has an unique device identifier.
-        if (!prefs.contains(SP_KEY_DEVICE_ID) || !newAccount.equals(oldAccount)) {
-            prefsEditor.putString(SP_KEY_DEVICE_ID,
-                DeviceUtils.getDeviceId(fragment.getActivity(), newAccount));
+        final boolean newUserSet = !prefs.contains(SP_KEY_DEVICE_ID)
+                || !newAccount.equals(oldAccount);
+        if (newUserSet) {
+            prefsEditor.putString(SP_KEY_DEVICE_ID, DeviceUtils.getDeviceId(fragment.getActivity(),
+                newAccount));
         }
         
         prefsEditor.putString(SP_KEY_ACCOUNT, newAccount);
@@ -116,7 +118,7 @@ class AccountInitTask extends AsyncTask<String, Void, Integer> {
         }
         
         if (AUTH_OK == authResult) {
-            if (!newAccount.equals(oldAccount)) {
+            if (newUserSet) {
                 // The user is different: clear events.
                 contentResolver.delete(EventsContract.CONTENT_URI, null, null);
             }
