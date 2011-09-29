@@ -35,6 +35,7 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,12 +49,14 @@ import org.json.JSONObject;
 import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
+import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
@@ -233,9 +236,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
         }
         
-        final ContentValues values = new ContentValues(1);
-        final String eventSelection = _ID + "=?";
-        final String[] eventSelectionArgs = new String[1];
+        final ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>(
+                32);
+        final ContentValues values = new ContentValues(8);
         
         if (eventsToDelete.isEmpty()) {
             Log.i(TAG, "No events to delete");
@@ -255,14 +258,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 if (DEVELOPER_MODE) {
                     Log.d(TAG, "Deleting event in local database: " + eventId);
                 }
-                eventSelectionArgs[0] = eventId;
-                provider.delete(EventsContract.CONTENT_URI, eventSelection, eventSelectionArgs);
+                batch.add(ContentProviderOperation.newDelete(
+                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).build());
                 syncResult.stats.numDeletes++;
-                
-                Log.i(TAG, "Event deletion successful: " + eventId);
-            } catch (RemoteException e) {
-                Log.w(TAG, "Failed to delete event " + eventId + " from local database", e);
-                syncResult.stats.numIoExceptions++;
             } catch (IOException e) {
                 Log.w(TAG, "Event deletion error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
@@ -273,6 +271,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 return;
             }
         }
+        
+        try {
+            provider.applyBatch(batch);
+        } catch (Exception e) {
+            Log.w(TAG, "Database error: cannot sync", e);
+            syncResult.stats.numIoExceptions++;
+            return;
+        }
+        batch.clear();
         
         if (fullSync) {
             // Get all events from the remote server.
@@ -341,13 +348,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         values.put(NUMBER, trimToNull(event.getString("number")));
                         values.put(NAME, trimToNull(event.getString("name")));
                         values.put(MESSAGE, trimToNull(event.getString("message")));
-                        eventSelectionArgs[0] = eventId;
                         
                         if (DEVELOPER_MODE) {
                             Log.d(TAG, "Updating event in local database: " + eventId);
                         }
-                        provider.update(EventsContract.CONTENT_URI, values, eventSelection,
-                            eventSelectionArgs);
+                        batch.add(ContentProviderOperation.newUpdate(
+                            Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
+                                .withExpectedCount(1).withValues(values).build());
                         syncResult.stats.numUpdates++;
                     } else {
                         // The event was not found: insert it.
@@ -364,7 +371,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         if (DEVELOPER_MODE) {
                             Log.d(TAG, "Adding event to local database: " + eventId);
                         }
-                        provider.insert(EventsContract.CONTENT_URI, values);
+                        batch.add(ContentProviderOperation.newInsert(
+                            Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).withValues(
+                            values).build());
                         syncResult.stats.numInserts++;
                         
                         ++newEventCount;
@@ -381,17 +390,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     Log.w(TAG, "Invalid event at index " + i + ": cannot sync", e);
                     syncResult.stats.numSkippedEntries++;
                     continue;
-                } catch (RemoteException e) {
-                    Log.w(TAG, "Failed to get event " + eventId + " from local database", e);
-                    syncResult.stats.numIoExceptions++;
                 }
-            }
-            
-            if (newEventCount > 1) {
-                newEventId = null;
-            }
-            if (newEventCount != 0) {
-                startSyncNotificationService(newEventCount, newEventId);
             }
             
             // The remaining event identifiers was removed on the remote
@@ -401,14 +400,25 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 if (DEVELOPER_MODE) {
                     Log.d(TAG, "Deleting event in local database: " + eventId);
                 }
-                eventSelectionArgs[0] = eventId;
-                try {
-                    provider.delete(EventsContract.CONTENT_URI, eventSelection, eventSelectionArgs);
-                    syncResult.stats.numDeletes++;
-                } catch (RemoteException e) {
-                    Log.w(TAG, "Failed to delete event " + eventId + " from local database", e);
-                    syncResult.stats.numIoExceptions++;
-                }
+                batch.add(ContentProviderOperation.newDelete(
+                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).build());
+                syncResult.stats.numDeletes++;
+            }
+            
+            try {
+                provider.applyBatch(batch);
+            } catch (Exception e) {
+                Log.w(TAG, "Database error: cannot sync", e);
+                syncResult.stats.numIoExceptions++;
+                return;
+            }
+            batch.clear();
+            
+            if (newEventCount > 1) {
+                newEventId = null;
+            }
+            if (newEventCount != 0) {
+                startSyncNotificationService(newEventCount, newEventId);
             }
         }
         
@@ -436,15 +446,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
                 values.clear();
                 values.put(STATE, EventsContract.UPLOADED_STATE);
-                eventSelectionArgs[0] = eventId;
-                provider.update(EventsContract.CONTENT_URI, values, eventSelection,
-                    eventSelectionArgs);
+                batch.add(ContentProviderOperation.newUpdate(
+                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).withValues(values)
+                        .withExpectedCount(1).build());
                 syncResult.stats.numUpdates++;
                 
                 Log.i(TAG, "Event upload successful: " + eventId);
-            } catch (RemoteException e) {
-                Log.w(TAG, "Failed to update event " + eventId + " to UPLOADED", e);
-                syncResult.stats.numIoExceptions++;
             } catch (IOException e) {
                 Log.e(TAG, "Event upload error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
@@ -455,6 +462,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 return;
             }
         }
+        
+        try {
+            provider.applyBatch(batch);
+        } catch (Exception e) {
+            Log.w(TAG, "Database error: cannot sync", e);
+            syncResult.stats.numIoExceptions++;
+            return;
+        }
+        batch.clear();
         
         final SharedPreferences.Editor prefsEditor = prefs.edit();
         

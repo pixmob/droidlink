@@ -29,12 +29,15 @@ import static com.pixmob.droidlink.provider.EventsContract.Event.NUMBER;
 import static com.pixmob.droidlink.provider.EventsContract.Event.STATE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.TYPE;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 import android.content.ContentProvider;
-import android.content.ContentUris;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -87,6 +90,29 @@ public class EventsContentProvider extends ContentProvider {
     }
     
     @Override
+    public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
+            throws OperationApplicationException {
+        if (operations.isEmpty()) {
+            return new ContentProviderResult[0];
+        }
+        
+        // Execute batch operations in a single transaction for performance.
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            final int numOperations = operations.size();
+            final ContentProviderResult[] results = new ContentProviderResult[numOperations];
+            for (int i = 0; i < numOperations; i++) {
+                results[i] = operations.get(i).apply(this, results, i);
+            }
+            db.setTransactionSuccessful();
+            return results;
+        } finally {
+            db.endTransaction();
+        }
+    }
+    
+    @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sortOrder) {
         final SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
@@ -125,11 +151,12 @@ public class EventsContentProvider extends ContentProvider {
                 break;
             case EVENT_ID:
                 final String id = uri.getPathSegments().get(1);
-                String fullSelection = _ID + "=" + id;
+                String fullSelection = _ID + "='" + id + "'";
                 if (!TextUtils.isEmpty(selection)) {
                     fullSelection += " AND (" + selection + ")";
                 }
                 count = db.delete(EVENTS_TABLE, fullSelection, selectionArgs);
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported Uri: " + uri);
         }
@@ -173,7 +200,8 @@ public class EventsContentProvider extends ContentProvider {
             throw new SQLException("Failed to insert row into " + uri);
         }
         
-        final Uri itemUri = ContentUris.withAppendedId(EventsContract.CONTENT_URI, rowID);
+        final Uri itemUri = Uri.withAppendedPath(EventsContract.CONTENT_URI, values
+                .getAsString(_ID));
         getContext().getContentResolver().notifyChange(itemUri, null, false);
         return itemUri;
     }
