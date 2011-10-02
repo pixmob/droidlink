@@ -189,13 +189,15 @@ public class NetworkClient {
         final HttpResponse resp = execute(request);
         final int statusCode = resp.getStatusLine().getStatusCode();
         if (isStatusNotFound(statusCode)) {
-            throw new NetworkClientException(requestUri, "Resource not found");
+            throw new NetworkClientException(requestUri, statusCode, "Resource not found");
         }
         if (isStatusError(statusCode)) {
-            throw new NetworkClientException(requestUri, "Request failed on remote server");
+            throw new NetworkClientException(requestUri, statusCode,
+                    "Request failed on remote server");
         }
         if (!isStatusOK(statusCode)) {
-            throw new NetworkClientException(requestUri, "Request failed with error " + statusCode);
+            throw new NetworkClientException(requestUri, statusCode, "Request failed with error "
+                    + statusCode);
         }
         
         final HttpEntity entity = resp.getEntity();

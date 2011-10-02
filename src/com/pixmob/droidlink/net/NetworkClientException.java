@@ -23,19 +23,35 @@ import java.io.IOException;
  */
 public class NetworkClientException extends IOException {
     private static final long serialVersionUID = 1L;
-    private String requestUri;
+    private final String requestUri;
+    private final int statusCode;
     
     public NetworkClientException(final String requestUri, final String message) {
-        this(requestUri, message, null);
+        this(requestUri, 500, message, null);
+    }
+    
+    public NetworkClientException(final String requestUri, final int statusCode,
+            final String message) {
+        this(requestUri, statusCode, message, null);
     }
     
     public NetworkClientException(final String requestUri, final String message,
             final Throwable cause) {
+        this(requestUri, 0, message, cause);
+    }
+    
+    public NetworkClientException(final String requestUri, final int statusCode,
+            final String message, final Throwable cause) {
         super(message, cause);
         this.requestUri = requestUri;
+        this.statusCode = statusCode;
     }
     
     public String getRequestUri() {
         return requestUri;
+    }
+    
+    public int getStatusCode() {
+        return statusCode;
     }
 }

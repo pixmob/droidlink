@@ -65,6 +65,7 @@ import com.pixmob.appengine.client.AppEngineAuthenticationException;
 import com.pixmob.droidlink.feature.Features;
 import com.pixmob.droidlink.feature.SharedPreferencesSaverFeature;
 import com.pixmob.droidlink.net.NetworkClient;
+import com.pixmob.droidlink.net.NetworkClientException;
 import com.pixmob.droidlink.provider.EventsContract;
 import com.pixmob.droidlink.service.DeviceInitService;
 
@@ -164,21 +165,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     
     private void doPerformSync(NetworkClient client, SharedPreferences prefs,
             ContentProviderClient provider, SyncResult syncResult, boolean fullSync) {
-        // Check if the device exists on the remote server.
-        try {
-            client.get("/devices/" + client.getDeviceId());
-        } catch (IOException e) {
-            Log.w(TAG, "I/O error: cannot sync", e);
-            syncResult.stats.numIoExceptions++;
-            
-            registerDevice();
-            return;
-        } catch (AppEngineAuthenticationException e) {
-            Log.e(TAG, "Authentication error: cannot sync", e);
-            syncResult.stats.numAuthExceptions++;
-            return;
-        }
-        
         // Prepare the query.
         final String selection = DEVICE_ID + "=? AND " + STATE + "=? OR " + STATE + "=?";
         final String[] selectionArgs = { client.getDeviceId(),
@@ -233,6 +219,33 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             if (c != null) {
                 c.close();
                 c = null;
+            }
+        }
+        
+        final boolean syncRequired = !eventsToDelete.isEmpty() || !eventsToUpload.isEmpty();
+        if (syncRequired) {
+            // Check if the device exists on the remote server.
+            try {
+                client.get("/devices/" + client.getDeviceId());
+            } catch (NetworkClientException e) {
+                Log.w(TAG, "Network error: cannot sync", e);
+                syncResult.stats.numIoExceptions++;
+                
+                if (e.getStatusCode() == 404) {
+                    // The device does not exist on the remote server:
+                    // upload this device configuration using a background
+                    // service.
+                    registerDevice();
+                }
+                return;
+            } catch (IOException e) {
+                Log.w(TAG, "I/O error: cannot sync", e);
+                syncResult.stats.numIoExceptions++;
+                return;
+            } catch (AppEngineAuthenticationException e) {
+                Log.e(TAG, "Authentication error: cannot sync", e);
+                syncResult.stats.numAuthExceptions++;
+                return;
             }
         }
         
@@ -352,8 +365,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         if (DEVELOPER_MODE) {
                             Log.d(TAG, "Updating event in local database: " + eventId);
                         }
-                        batch.add(ContentProviderOperation.newUpdate(
-                            Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
+                        batch.add(ContentProviderOperation
+                                .newUpdate(
+                                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
                                 .withExpectedCount(1).withValues(values).build());
                         syncResult.stats.numUpdates++;
                     } else {
@@ -371,9 +385,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         if (DEVELOPER_MODE) {
                             Log.d(TAG, "Adding event to local database: " + eventId);
                         }
-                        batch.add(ContentProviderOperation.newInsert(
-                            Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).withValues(
-                            values).build());
+                        batch.add(ContentProviderOperation
+                                .newInsert(
+                                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
+                                .withValues(values).build());
                         syncResult.stats.numInserts++;
                         
                         ++newEventCount;
@@ -446,9 +461,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
                 values.clear();
                 values.put(STATE, EventsContract.UPLOADED_STATE);
-                batch.add(ContentProviderOperation.newUpdate(
-                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).withValues(values)
-                        .withExpectedCount(1).build());
+                batch.add(ContentProviderOperation
+                        .newUpdate(Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
+                        .withValues(values).withExpectedCount(1).build());
                 syncResult.stats.numUpdates++;
                 
                 Log.i(TAG, "Event upload successful: " + eventId);
@@ -474,7 +489,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         
         final SharedPreferences.Editor prefsEditor = prefs.edit();
         
-        final boolean syncRequired = !eventsToDelete.isEmpty() || !eventsToUpload.isEmpty();
         if (syncRequired) {
             // Generate an unique sync token: the server will send this token to
             // every devices. If this token is received on this device, the sync
