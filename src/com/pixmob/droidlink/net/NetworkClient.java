@@ -108,7 +108,8 @@ public class NetworkClient {
             }
         }
         return APPLICATION_NAME + "/" + applicationVersion + " (" + Build.MANUFACTURER + " "
-                + Build.MODEL + " with Android " + Build.VERSION.SDK_INT + ")";
+                + Build.MODEL + " with Android " + Build.VERSION.RELEASE + "/"
+                + Build.VERSION.SDK_INT + ")";
     }
     
     public String getDeviceId() {
