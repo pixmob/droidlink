@@ -222,33 +222,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             }
         }
         
-        final boolean syncRequired = !eventsToDelete.isEmpty() || !eventsToUpload.isEmpty();
-        if (syncRequired) {
-            // Check if the device exists on the remote server.
-            try {
-                client.get("/devices/" + client.getDeviceId());
-            } catch (NetworkClientException e) {
-                Log.w(TAG, "Network error: cannot sync", e);
-                syncResult.stats.numIoExceptions++;
-                
-                if (e.getStatusCode() == 404) {
-                    // The device does not exist on the remote server:
-                    // upload this device configuration using a background
-                    // service.
-                    registerDevice();
-                }
-                return;
-            } catch (IOException e) {
-                Log.w(TAG, "I/O error: cannot sync", e);
-                syncResult.stats.numIoExceptions++;
-                return;
-            } catch (AppEngineAuthenticationException e) {
-                Log.e(TAG, "Authentication error: cannot sync", e);
-                syncResult.stats.numAuthExceptions++;
-                return;
-            }
-        }
-        
         final ArrayList<ContentProviderOperation> batch = new ArrayList<ContentProviderOperation>(
                 32);
         final ContentValues values = new ContentValues(8);
@@ -275,7 +248,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).build());
                 syncResult.stats.numDeletes++;
             } catch (IOException e) {
-                Log.w(TAG, "Event deletion error: cannot sync", e);
+                Log.e(TAG, "Event deletion error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
                 return;
             } catch (AppEngineAuthenticationException e) {
@@ -365,9 +338,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         if (DEVELOPER_MODE) {
                             Log.d(TAG, "Updating event in local database: " + eventId);
                         }
-                        batch.add(ContentProviderOperation
-                                .newUpdate(
-                                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
+                        batch.add(ContentProviderOperation.newUpdate(
+                            Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
                                 .withExpectedCount(1).withValues(values).build());
                         syncResult.stats.numUpdates++;
                     } else {
@@ -385,10 +357,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                         if (DEVELOPER_MODE) {
                             Log.d(TAG, "Adding event to local database: " + eventId);
                         }
-                        batch.add(ContentProviderOperation
-                                .newInsert(
-                                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
-                                .withValues(values).build());
+                        batch.add(ContentProviderOperation.newInsert(
+                            Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).withValues(
+                            values).build());
                         syncResult.stats.numInserts++;
                         
                         ++newEventCount;
@@ -423,7 +394,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             try {
                 provider.applyBatch(batch);
             } catch (Exception e) {
-                Log.w(TAG, "Database error: cannot sync", e);
+                Log.e(TAG, "Database error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
                 return;
             }
@@ -461,12 +432,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
                 values.clear();
                 values.put(STATE, EventsContract.UPLOADED_STATE);
-                batch.add(ContentProviderOperation
-                        .newUpdate(Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId))
-                        .withValues(values).withExpectedCount(1).build());
+                batch.add(ContentProviderOperation.newUpdate(
+                    Uri.withAppendedPath(EventsContract.CONTENT_URI, eventId)).withValues(values)
+                        .withExpectedCount(1).build());
                 syncResult.stats.numUpdates++;
                 
                 Log.i(TAG, "Event upload successful: " + eventId);
+            } catch (NetworkClientException e) {
+                if (e.getStatusCode() == 404) {
+                    Log.e(TAG, "Device not found: cannot sync", e);
+                    registerDevice();
+                } else {
+                    Log.e(TAG, "Network error: cannot sync", e);
+                }
+                syncResult.stats.numIoExceptions++;
+                return;
             } catch (IOException e) {
                 Log.e(TAG, "Event upload error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
@@ -488,7 +468,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         batch.clear();
         
         final SharedPreferences.Editor prefsEditor = prefs.edit();
-        
+        final boolean syncRequired = !eventsToDelete.isEmpty() || !eventsToUpload.isEmpty();
         if (syncRequired) {
             // Generate an unique sync token: the server will send this token to
             // every devices. If this token is received on this device, the sync
@@ -502,6 +482,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 final JSONObject data = new JSONObject();
                 data.put("token", syncToken);
                 client.post("/devices/" + client.getDeviceId() + "/sync", data);
+            } catch (NetworkClientException e) {
+                if (e.getStatusCode() == 404) {
+                    registerDevice();
+                }
             } catch (IOException e) {
                 Log.e(TAG, "Device sync error: cannot sync", e);
                 syncResult.stats.numIoExceptions++;
