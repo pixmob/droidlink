@@ -29,6 +29,7 @@ import java.util.Map;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.telephony.PhoneNumberUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -61,14 +62,19 @@ class EventCursorAdapter extends SimpleCursorAdapter {
     public void bindView(View v, Context context, Cursor cursor) {
         final int state = cursor.getInt(cursor.getColumnIndexOrThrow(STATE));
         final String name = cursor.getString(cursor.getColumnIndexOrThrow(NAME));
-        final String number = cursor.getString(cursor.getColumnIndexOrThrow(NUMBER));
+        String number = cursor.getString(cursor.getColumnIndexOrThrow(NUMBER));
         final long date = cursor.getLong(cursor.getColumnIndexOrThrow(CREATED));
+        
+        if (number != null) {
+            number = PhoneNumberUtils.formatNumber(number);
+        }
         
         final int type = cursor.getInt(cursor.getColumnIndexOrThrow(TYPE));
         final Integer typeResourceId = EVENT_ICONS.get(type);
         
-        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date, System
-                .currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+        final CharSequence eventDate = DateUtils.getRelativeTimeSpanString(date,
+            System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
+            DateUtils.FORMAT_ABBREV_RELATIVE);
         
         final String message = cursor.getString(cursor.getColumnIndexOrThrow(MESSAGE));
         

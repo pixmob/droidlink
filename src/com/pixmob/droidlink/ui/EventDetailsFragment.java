@@ -52,6 +52,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
+import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -160,8 +161,10 @@ public class EventDetailsFragment extends Fragment {
     
     private void onComposeSMS() {
         if (number != null) {
-            final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("sms:" + number));
-            startActivity(i);
+            if (PhoneNumberUtils.isWellFormedSmsAddress(number)) {
+                final Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("sms:" + number));
+                startActivity(i);
+            }
         }
     }
     
@@ -223,6 +226,10 @@ public class EventDetailsFragment extends Fragment {
             message = cursor.getString(cursor.getColumnIndexOrThrow(MESSAGE));
         } finally {
             cursor.close();
+        }
+        
+        if (number != null) {
+            number = PhoneNumberUtils.formatNumber(number);
         }
         
         final String dateStr = DateUtils.formatDateTime(getActivity(), date,
