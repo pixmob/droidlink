@@ -18,6 +18,8 @@ package com.pixmob.droidlink.ui;
 import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
 import static android.support.v4.view.MenuItem.SHOW_AS_ACTION_IF_ROOM;
 import static android.view.Menu.NONE;
+import static com.pixmob.droidlink.Constants.DEVELOPER_MODE;
+import static com.pixmob.droidlink.Constants.TAG;
 import static com.pixmob.droidlink.provider.EventsContract.Event.CREATED;
 import static com.pixmob.droidlink.provider.EventsContract.Event.MESSAGE;
 import static com.pixmob.droidlink.provider.EventsContract.Event.NAME;
@@ -36,6 +38,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -51,6 +54,7 @@ import android.support.v4.view.Menu;
 import android.support.v4.view.MenuItem;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
@@ -60,6 +64,7 @@ import android.widget.TextView;
 
 import com.pixmob.droidlink.R;
 import com.pixmob.droidlink.provider.EventsContract;
+import com.pixmob.droidlink.util.Cache;
 
 /**
  * Fragment for displaying event details.
@@ -67,6 +72,7 @@ import com.pixmob.droidlink.provider.EventsContract;
  */
 public class EventDetailsFragment extends Fragment {
     private static final String[] EVENT_PROJECTION = { CREATED, TYPE, NAME, NUMBER, MESSAGE };
+    private static ContactPictureCache contactPictureCache;
     private static final Map<Integer, Integer> EVENT_ICONS = new HashMap<Integer, Integer>(2);
     static {
         EVENT_ICONS.put(EventsContract.MISSED_CALL_TYPE, R.drawable.ic_missed_call);
@@ -80,6 +86,16 @@ public class EventDetailsFragment extends Fragment {
     private TextView messageView;
     private Uri eventUri;
     private String number;
+    
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (contactPictureCache == null) {
+            // Lazy load the contact picture cache.
+            contactPictureCache = new ContactPictureCache(getActivity().getApplicationContext()
+                    .getContentResolver());
+        }
+    }
     
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -111,12 +127,12 @@ public class EventDetailsFragment extends Fragment {
         if (deviceIsPhone) {
             menu.add(NONE, R.string.call, NONE, R.string.call).setIcon(R.drawable.ic_menu_call)
                     .setShowAsAction(SHOW_AS_ACTION_ALWAYS);
-            menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms).setIcon(
-                R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
+            menu.add(NONE, R.string.compose_sms, NONE, R.string.compose_sms)
+                    .setIcon(R.drawable.ic_menu_compose).setShowAsAction(SHOW_AS_ACTION_ALWAYS);
         }
         
-        menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event).setIcon(
-            R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
+        menu.add(NONE, R.string.delete_event, NONE, R.string.delete_event)
+                .setIcon(R.drawable.ic_menu_delete).setShowAsAction(SHOW_AS_ACTION_IF_ROOM);
     }
     
     @Override
@@ -273,8 +289,9 @@ public class EventDetailsFragment extends Fragment {
         protected Drawable doInBackground(Void... params) {
             // First, the contact identifier is searched from its phone number.
             final ContentResolver contentResolver = fragment.getActivity().getContentResolver();
-            Cursor c = contentResolver.query(Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(number)), new String[] { BaseColumns._ID }, null, null, null);
+            Cursor c = contentResolver.query(
+                Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number)),
+                new String[] { BaseColumns._ID }, null, null, null);
             int contactKey = -1;
             try {
                 if (c.moveToNext()) {
@@ -291,12 +308,16 @@ public class EventDetailsFragment extends Fragment {
             
             Drawable contactPicture = null;
             if (contactKey != -1) {
-                // Then, we look for the contact picture.
-                final InputStream input = Contacts.openContactPhotoInputStream(contentResolver, Uri
-                        .withAppendedPath(Contacts.CONTENT_URI, String.valueOf(contactKey)));
-                if (input != null) {
-                    // The contact has a profile picture.
-                    contactPicture = Drawable.createFromStream(input, "contactpicture");
+                // Try to load the contact picture using a cache in order to
+                // reuse instances.
+                contactPicture = contactPictureCache.get(contactKey);
+            }
+            
+            if (DEVELOPER_MODE) {
+                if (contactPicture != null) {
+                    Log.i(TAG, "Found contact picture for '" + number + "'");
+                } else {
+                    Log.i(TAG, "Found NO contact picture for '" + number + "'");
                 }
             }
             
@@ -318,19 +339,54 @@ public class EventDetailsFragment extends Fragment {
     public static class ConfirmEventDeletionDialog extends DialogFragment {
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            return new AlertDialog.Builder(getActivity()).setIcon(
-                android.R.drawable.ic_dialog_alert).setMessage(R.string.confirm_delete_event)
-                    .setTitle(R.string.delete_event).setNegativeButton(android.R.string.cancel,
-                        null).setPositiveButton(android.R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                final EventDetailsFragment fragment = (EventDetailsFragment) ((FragmentActivity) getActivity())
-                                        .getSupportFragmentManager().findFragmentById(
-                                            R.id.event_details);
-                                fragment.onDeleteEvent();
-                            }
-                        }).create();
+            return new AlertDialog.Builder(getActivity())
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setMessage(R.string.confirm_delete_event).setTitle(R.string.delete_event)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            final EventDetailsFragment fragment = (EventDetailsFragment) ((FragmentActivity) getActivity())
+                                    .getSupportFragmentManager().findFragmentById(
+                                        R.id.event_details);
+                            fragment.onDeleteEvent();
+                        }
+                    }).create();
+        }
+    }
+    
+    /**
+     * Contact picture cache.
+     * @author Pixmob
+     */
+    private static class ContactPictureCache extends Cache<Integer, Drawable> {
+        private final ContentResolver contentResolver;
+        
+        public ContactPictureCache(final ContentResolver contentResolver) {
+            super(1000 * 60);
+            this.contentResolver = contentResolver;
+        }
+        
+        @Override
+        protected Drawable createEntry(Integer key) {
+            Drawable contactPicture = null;
+            final InputStream input = Contacts.openContactPhotoInputStream(contentResolver,
+                Uri.withAppendedPath(Contacts.CONTENT_URI, String.valueOf(key)));
+            if (input != null) {
+                // The contact has a profile picture.
+                contactPicture = Drawable.createFromStream(input, "contactpicture");
+            }
+            return contactPicture;
+        }
+        
+        @Override
+        protected void entryRemoved(Integer key, Drawable value) {
+            if (value != null && value instanceof BitmapDrawable) {
+                // Free bitmap resource when the contact picture is no longer
+                // needed.
+                final BitmapDrawable b = (BitmapDrawable) value;
+                b.getBitmap().recycle();
+            }
         }
     }
 }
