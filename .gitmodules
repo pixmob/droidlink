@@ -1,3 +1,9 @@
 [submodule "deps/ActionBarSherlock"]
 	path = deps/ActionBarSherlock
 	url = https://github.com/JakeWharton/ActionBarSherlock.git
+[submodule "deps/actionservice"]
+	path = deps/actionservice
+	url = http://github.com/pixmob/actionservice
+[submodule "deps/appengineclient"]
+	path = deps/appengineclient
+	url = http://github.com/pixmob/appengineclient

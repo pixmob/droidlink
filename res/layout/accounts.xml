@@ -6,6 +6,6 @@
     <TextView android:layout_height="wrap_content" android:id="@+id/message"
         android:layout_width="wrap_content" android:text="@string/select_account"
         android:padding="4dip"></TextView>
-    <fragment android:name="com.pixmob.droidlink.ui.AccountsFragment" android:id="@+id/accounts"
+    <fragment android:name="org.pixmob.droidlink.ui.AccountsFragment" android:id="@+id/accounts"
         android:layout_width="fill_parent" android:layout_height="fill_parent" />
 </LinearLayout>

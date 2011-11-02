@@ -3,7 +3,7 @@
     android:layout_width="fill_parent" android:layout_height="fill_parent" android:orientation="vertical">
     <View android:background="@color/nav_divider_color" android:layout_width="fill_parent"
         android:layout_height="1dip" />
-    <fragment android:name="com.pixmob.droidlink.ui.EventDetailsFragment" android:id="@+id/event_details"
+    <fragment android:name="org.pixmob.droidlink.ui.EventDetailsFragment" android:id="@+id/event_details"
         android:layout_width="fill_parent" android:layout_height="fill_parent"
         android:layout_marginTop="10dip" android:layout_marginLeft="6dip" />
 </LinearLayout>
